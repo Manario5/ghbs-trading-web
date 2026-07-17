@@ -1,0 +1,14 @@
+[Unit]
+Description=GHBS Trading Frontend Preview
+After=network.target
+
+[Service]
+User=ghbs
+WorkingDirectory=/opt/ghbs-trading
+# Always ensure `npm run build` completes before running the preview successfully
+ExecStart=/usr/bin/npm run preview -- --host 127.0.0.1 --port 3000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
