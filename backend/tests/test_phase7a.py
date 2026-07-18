@@ -28,7 +28,7 @@ def _all_gates_env(monkeypatch):
     monkeypatch.setenv("ENABLE_TELEGRAM_TEST_SEND", "true")
     monkeypatch.setenv("ENABLE_TELEGRAM_SEND", "true")
     monkeypatch.setenv("ENABLE_ALERT_SCHEDULER", "false")
-    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "111111111:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "TEST_TELEGRAM_TOKEN_NOT_REAL")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "987654321")
 
 
@@ -237,7 +237,7 @@ def test_safety_matrix_exposes_phase7a_fields(monkeypatch):
 
 def test_safety_matrix_no_secret_leak(monkeypatch):
     """Safety matrix must never return token or chat ID values."""
-    secret_token = "999999999:SECRETSECRETSECRETSECRETSECRETSECRET"
+    secret_token = "TEST_TELEGRAM_TOKEN_NOT_REAL"
     secret_chat = "111222333"
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", secret_token)
     monkeypatch.setenv("TELEGRAM_CHAT_ID", secret_chat)
