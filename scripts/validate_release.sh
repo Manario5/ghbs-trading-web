@@ -57,6 +57,8 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+echo "8. Validating Telegram dry-run negative checks..."
+./scripts/telegram_negative_tests.sh
 echo "----------------------------------------"
 echo "Release Candidate Validated Successfully!"
 echo "----------------------------------------"

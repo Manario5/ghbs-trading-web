@@ -452,3 +452,10 @@ By following this deployment runbook correctly:
 - The `scheduler` remains deactivated keeping outbound API integrations completely paused.
 - No Telegram limits can be exceeded autonomously during sandbox runtime tests explicitly. 
 - The engine guarantees no live external trading interactions or operations executing transactions natively. Limits restrict behavior completely down to `auth-only` logging structures.
+
+## Option L — Phase 6W Telegram Alerts Dry-Run Foundation
+Phase 6W adds Telegram readiness and dry-run preview capability only.
+Status check: ./scripts/telegram_alert_status.sh
+Negative tests: ./scripts/telegram_negative_tests.sh
+Dry-run notes: ./scripts/telegram_dry_run_notes.sh
+Phase 6W does not send Telegram messages and does not call the Telegram Bot API.

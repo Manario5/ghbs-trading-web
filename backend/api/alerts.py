@@ -167,3 +167,17 @@ async def get_alerts_log(current_user: dict = Depends(get_current_user), db=Depe
     """) as cur:
         rows = await cur.fetchall()
         return [dict(row) for row in rows]
+
+
+from typing import Dict, Any
+from fastapi import Depends as _Depends
+from backend.auth.dependencies import get_current_user as _get_current_user
+from backend.core.telegram_readiness import build_telegram_dry_run_preview
+
+
+@router.post("/telegram/dry-run-preview")
+async def telegram_dry_run_preview(
+    payload: Dict[str, Any] | None = None,
+    current_user: dict = _Depends(_get_current_user),
+):
+    return build_telegram_dry_run_preview(payload or {})

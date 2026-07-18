@@ -32,7 +32,8 @@ async def system_config():
 async def safety_matrix():
     from backend.db.database import get_db_path
     from backend.core.execution_guard import get_execution_guard_status
-    
+    from backend.core.telegram_readiness import get_telegram_alert_status
+
     allow_prod = os.environ.get("ALLOW_PRODUCTION_DB", "false").lower() == "true"
     db_path = get_db_path()
     live_analyze = os.environ.get("ENABLE_LIVE_ANALYZE_PREVIEW", "false").lower() == "true"
@@ -40,19 +41,20 @@ async def safety_matrix():
     alert_sched = os.environ.get("ENABLE_ALERT_SCHEDULER", "false").lower() == "true"
     cov_scan = os.environ.get("ENABLE_PROVIDER_COVERAGE_SCAN", "false").lower() == "true"
     api_smoke = os.environ.get("ENABLE_MARKET_DATA_SMOKE_TESTS", "false").lower() == "true"
-    
+
     gate_enabled = os.environ.get("ENABLE_PRODUCTION_DB_READONLY_GATE", "false").lower() == "true"
     ro_required = os.environ.get("PRODUCTION_DB_READONLY_REQUIRED", "true").lower() == "true"
     prod_path_configured = bool(os.environ.get("PRODUCTION_DB_PATH", "").strip())
-    
+
     tg_token_configured = len(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()) > 0
     anth_configured = len(os.environ.get("ANTHROPIC_API_KEY", "").strip()) > 0
-    
+
     tg_masked = "configured" if tg_token_configured else "not configured"
     anth_masked = "configured" if anth_configured else "not configured"
-    
+
     exec_status = get_execution_guard_status()
-    
+    tg_status = get_telegram_alert_status()
+
     state = "SAFE"
     if allow_prod and "tasi_ledger_test.db" not in db_path:
         state = "UNSAFE"
@@ -66,7 +68,10 @@ async def safety_matrix():
         state = "UNSAFE" if (allow_prod or db_path != "tasi_ledger_test.db") else "WARNING"
     elif live_analyze or live_scout or api_smoke:
         state = "UNSAFE" if (allow_prod or db_path != "tasi_ledger_test.db") else "WARNING"
-        
+
+    if tg_status.get("safety_state") != "SAFE" and state == "SAFE":
+        state = "WARNING"
+
     return {
         "allow_production_db": allow_prod,
         "db_path": db_path,
@@ -81,6 +86,11 @@ async def safety_matrix():
         "market_data_smoke_tests_enabled": api_smoke,
         "provider_readiness_safe": not (api_smoke or cov_scan or live_analyze or live_scout),
         "provider_calls_locked": not (api_smoke or cov_scan or live_analyze or live_scout),
+        "telegram_dry_run_enabled": tg_status.get("telegram_dry_run_enabled", True),
+        "telegram_send_enabled": tg_status.get("telegram_send_enabled", False),
+        "telegram_test_send_enabled": tg_status.get("telegram_test_send_enabled", False),
+        "telegram_network_calls_locked": tg_status.get("telegram_network_calls_locked", True),
+        "telegram_readiness_safe": tg_status.get("safety_state") == "SAFE",
         "telegram_configured_masked": tg_masked,
         "anthropic_configured_masked": anth_masked,
         "active_environment": os.environ.get("ENVIRONMENT", "development"),
@@ -140,3 +150,9 @@ async def live_preview_status():
         "can_manual_scout_preview": live_scout and state == "SAFE",
         "locked_reason": reason
     }
+
+
+@router.get("/telegram-alert-status")
+async def telegram_alert_status():
+    from backend.core.telegram_readiness import get_telegram_alert_status
+    return get_telegram_alert_status()
