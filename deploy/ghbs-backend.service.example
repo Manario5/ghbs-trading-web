@@ -1,0 +1,17 @@
+[Unit]
+Description=GHBS Trading Backend API
+After=network.target
+
+[Service]
+User=ghbs
+WorkingDirectory=/opt/ghbs-trading
+# Environment file can hold secret bounds securely if not tracking `.env` directly
+# EnvironmentFile=/opt/ghbs-trading/.env
+
+# Use the virtual environment Python
+ExecStart=/opt/ghbs-trading/venv/bin/python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
