@@ -175,12 +175,67 @@ from backend.auth.dependencies import get_current_user as _get_current_user
 from backend.core.telegram_readiness import build_telegram_dry_run_preview
 
 
+from backend.core.alert_audit import record_alert_attempt, last_attempt, read_recent_attempts
+from backend.core.alert_templates import list_templates, render_template
+
+
 @router.post("/telegram/dry-run-preview")
 async def telegram_dry_run_preview(
     payload: Dict[str, Any] | None = None,
     current_user: dict = _Depends(_get_current_user),
 ):
-    return build_telegram_dry_run_preview(payload or {})
+    preview = build_telegram_dry_run_preview(payload or {})
+    record_alert_attempt({
+        "kind": "dry_run",
+        "outcome": "locked",
+        "gate_status": "locked",
+        "network_call_made": False,
+        "blocked_reasons": ["Dry-run preview never sends"],
+        "template_id": preview.get("template_type", "generic_alert"),
+        "message_excerpt": preview.get("message_preview", "")[:80],
+    })
+    return preview
+
+
+@router.get("/telegram/status")
+async def telegram_status(current_user: dict = _Depends(_get_current_user)):
+    """
+    Unified Telegram visibility endpoint for the UI (Release Train A).
+
+    Returns readiness, gate status, blocked reasons, send/test flags, and the
+    last recorded dry-run/test-send attempt. Masked values only — no secrets.
+    """
+    from backend.core.telegram_readiness import get_telegram_alert_status
+    from backend.core.telegram_sender import evaluate_test_send_gates
+
+    readiness = get_telegram_alert_status()
+    gates = evaluate_test_send_gates()
+
+    return {
+        "readiness": readiness,
+        "gates": gates,
+        "last_attempt": last_attempt(),
+        "recent_attempts": read_recent_attempts(limit=10),
+    }
+
+
+@router.get("/templates")
+async def alert_templates(current_user: dict = _Depends(_get_current_user)):
+    """List available alert templates (test + future system alerts)."""
+    return {"templates": list_templates()}
+
+
+@router.post("/templates/render")
+async def render_alert_template(
+    payload: Dict[str, Any],
+    current_user: dict = _Depends(_get_current_user),
+):
+    """Render a template preview server-side. Never sends anything."""
+    template_id = str(payload.get("template_id", ""))
+    params = payload.get("params") or {}
+    if not isinstance(params, dict):
+        params = {}
+    return render_template(template_id, params)
 
 
 @router.post("/telegram/test-send")
@@ -203,6 +258,13 @@ async def telegram_test_send(current_user: dict = _Depends(_get_current_user)):
     gates = evaluate_test_send_gates()
 
     if not gates["can_run_test_send"]:
+        record_alert_attempt({
+            "kind": "test_send",
+            "outcome": "locked",
+            "gate_status": gates["test_send_gate_status"],
+            "network_call_made": False,
+            "blocked_reasons": gates["blocked_reasons"],
+        })
         return {
             "sent": False,
             "dry_run": True,
@@ -216,6 +278,16 @@ async def telegram_test_send(current_user: dict = _Depends(_get_current_user)):
         }
 
     result = await send_telegram_test_message()
+
+    record_alert_attempt({
+        "kind": "test_send",
+        "outcome": "sent" if result["sent"] else "failed",
+        "gate_status": result["gate_status"],
+        "network_call_made": result["network_call_made"],
+        "blocked_reasons": result["blocked_reasons"],
+        "template_id": "manual_test_send",
+        "target_chat_masked": result.get("target_chat_masked", "***"),
+    })
 
     # Strip any token/chat values that might have been set upstream; return only safe fields.
     return {

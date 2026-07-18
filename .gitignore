@@ -12,3 +12,4 @@ dist/
 __pycache__/
 .pytest_cache/
 backups/
+alert_attempts_audit.jsonl
