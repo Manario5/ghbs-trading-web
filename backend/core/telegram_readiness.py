@@ -7,17 +7,44 @@ def _env_bool(name: str, default: str = "false") -> bool:
     return os.environ.get(name, default).strip().lower() == "true"
 
 
+def _value(name: str) -> str:
+    return os.environ.get(name, "").strip()
+
+
 def _configured(name: str) -> bool:
-    return bool(os.environ.get(name, "").strip())
+    return bool(_value(name))
 
 
 def _masked_status(name: str) -> str:
     return "configured" if _configured(name) else "missing"
 
 
+def _telegram_token_value() -> str:
+    primary = _value("TELEGRAM_BOT_TOKEN")
+    alias = _value("TELEGRAM_TOKEN")
+    return primary or alias
+
+
+def _telegram_token_source() -> str:
+    if _configured("TELEGRAM_BOT_TOKEN"):
+        return "TELEGRAM_BOT_TOKEN"
+    if _configured("TELEGRAM_TOKEN"):
+        return "TELEGRAM_TOKEN"
+    return "missing"
+
+
+def _authorized_user_ids_count() -> int:
+    raw = _value("AUTHORIZED_USER_IDS")
+    if not raw:
+        return 0
+    return len([part.strip() for part in raw.split(",") if part.strip()])
+
+
 def get_telegram_alert_status() -> Dict[str, Any]:
-    token_configured = _configured("TELEGRAM_BOT_TOKEN")
+    token_value = _telegram_token_value()
+    token_configured = bool(token_value)
     chat_configured = _configured("TELEGRAM_CHAT_ID")
+    authorized_ids_configured = _configured("AUTHORIZED_USER_IDS")
 
     dry_run_enabled = _env_bool("ENABLE_TELEGRAM_DRY_RUN", "true")
     send_enabled = _env_bool("ENABLE_TELEGRAM_SEND", "false")
@@ -35,14 +62,20 @@ def get_telegram_alert_status() -> Dict[str, Any]:
     locked_reason = (
         "Telegram sending locked by default configuration"
         if safety_state == "SAFE"
-        else "Telegram send/test/scheduler flags are not allowed in Phase 6W"
+        else "Telegram send/test/scheduler flags are not allowed in Phase 6X"
     )
 
     return {
         "telegram_bot_token_configured": token_configured,
         "telegram_chat_id_configured": chat_configured,
-        "telegram_bot_token_masked": _masked_status("TELEGRAM_BOT_TOKEN"),
+        "telegram_bot_token_masked": "configured" if token_configured else "missing",
         "telegram_chat_id_masked": _masked_status("TELEGRAM_CHAT_ID"),
+        "telegram_token_source": _telegram_token_source(),
+        "telegram_token_alias_configured": _configured("TELEGRAM_TOKEN"),
+        "telegram_token_alias_used": (not _configured("TELEGRAM_BOT_TOKEN")) and _configured("TELEGRAM_TOKEN"),
+        "authorized_user_ids_configured": authorized_ids_configured,
+        "authorized_user_ids_masked": "configured" if authorized_ids_configured else "missing",
+        "authorized_user_ids_count": _authorized_user_ids_count(),
         "telegram_dry_run_enabled": dry_run_enabled,
         "telegram_send_enabled": send_enabled,
         "telegram_test_send_enabled": test_send_enabled,

@@ -459,3 +459,8 @@ Status check: ./scripts/telegram_alert_status.sh
 Negative tests: ./scripts/telegram_negative_tests.sh
 Dry-run notes: ./scripts/telegram_dry_run_notes.sh
 Phase 6W does not send Telegram messages and does not call the Telegram Bot API.
+
+## Option M — Phase 6X Secret Alias Readiness
+Phase 6X supports TELEGRAM_TOKEN as an alias for TELEGRAM_BOT_TOKEN and masks AUTHORIZED_USER_IDS.
+Do not paste real secrets into chat or commit them to GitHub.
+Use ./scripts/secrets_status.sh and ./scripts/telegram_alert_status.sh to verify masked readiness.

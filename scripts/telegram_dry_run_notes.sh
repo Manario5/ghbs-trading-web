@@ -2,21 +2,25 @@
 set -euo pipefail
 
 cat <<'TXT'
-Phase 6W Telegram Dry-Run Notes
+Phase 6X Telegram / Secret Alias Notes
 
-This phase is dry-run only.
+This phase is configuration-readiness only.
 
-Allowed:
-- View Telegram readiness status.
-- Generate local dry-run preview payloads.
-- Verify token/chat id are configured or missing using masked status only.
+Supported:
+- TELEGRAM_BOT_TOKEN
+- TELEGRAM_TOKEN as alias if TELEGRAM_BOT_TOKEN is missing
+- TELEGRAM_CHAT_ID
+- AUTHORIZED_USER_IDS
+- ANTHROPIC_API_KEY readiness
 
-Not allowed in Phase 6W:
-- Real Telegram Bot API calls.
-- Real Telegram sending.
-- Scheduler-triggered alerts.
-- Production DB writes.
-- Broker/order execution.
+Safety:
+- Do not paste real secrets into chat.
+- Do not commit .env to GitHub.
+- Status scripts print CONFIGURED or MISSING only.
+- AUTHORIZED_USER_IDS prints only a count, not values.
+- Telegram sending remains disabled.
+- Telegram network calls remain locked.
+- Anthropic calls are not made in this phase.
 
-Later controlled phases may add a manual test-send gate, but this script does not enable anything.
+Later controlled phases may use the real values from VPS .env only.
 TXT
