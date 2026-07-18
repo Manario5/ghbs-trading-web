@@ -181,3 +181,53 @@ async def telegram_dry_run_preview(
     current_user: dict = _Depends(_get_current_user),
 ):
     return build_telegram_dry_run_preview(payload or {})
+
+
+@router.post("/telegram/test-send")
+async def telegram_test_send(current_user: dict = _Depends(_get_current_user)):
+    """
+    Controlled manual test-send endpoint.
+
+    Makes a real Telegram network call only when all five gates pass:
+      - ENABLE_TELEGRAM_TEST_SEND=true
+      - ENABLE_TELEGRAM_SEND=true
+      - ENABLE_ALERT_SCHEDULER=false
+      - TELEGRAM_BOT_TOKEN or TELEGRAM_TOKEN configured
+      - TELEGRAM_CHAT_ID configured
+
+    Otherwise returns a locked status with no network call.
+    Secret values are never included in the response.
+    """
+    from backend.core.telegram_sender import send_telegram_test_message, evaluate_test_send_gates
+
+    gates = evaluate_test_send_gates()
+
+    if not gates["can_run_test_send"]:
+        return {
+            "sent": False,
+            "dry_run": True,
+            "network_call_made": False,
+            "gate_status": gates["test_send_gate_status"],
+            "can_run_test_send": False,
+            "test_send_requires_manual_enablement": True,
+            "network_call_allowed_for_test_send": False,
+            "blocked_reasons": gates["blocked_reasons"],
+            "message": "Test-send is locked. All gates must be manually enabled. No network call was made.",
+        }
+
+    result = await send_telegram_test_message()
+
+    # Strip any token/chat values that might have been set upstream; return only safe fields.
+    return {
+        "sent": result["sent"],
+        "dry_run": result["dry_run"],
+        "network_call_made": result["network_call_made"],
+        "gate_status": result["gate_status"],
+        "can_run_test_send": True,
+        "test_send_requires_manual_enablement": False,
+        "network_call_allowed_for_test_send": True,
+        "blocked_reasons": result["blocked_reasons"],
+        "target_chat_masked": result.get("target_chat_masked", "***"),
+        "message": result["message"],
+        "timestamp": result.get("timestamp", ""),
+    }

@@ -101,6 +101,10 @@ async def safety_matrix():
         "authorized_user_ids_masked": tg_status.get("authorized_user_ids_masked", "missing"),
         "authorized_user_ids_count": tg_status.get("authorized_user_ids_count", 0),
         "telegram_configured_masked": tg_masked,
+        "can_run_test_send": tg_status.get("can_run_test_send", False),
+        "test_send_gate_status": tg_status.get("test_send_gate_status", "locked"),
+        "test_send_requires_manual_enablement": tg_status.get("test_send_requires_manual_enablement", True),
+        "network_call_allowed_for_test_send": tg_status.get("network_call_allowed_for_test_send", False),
         "anthropic_configured_masked": anth_masked,
         "active_environment": os.environ.get("ENVIRONMENT", "development"),
         "safety_state": state

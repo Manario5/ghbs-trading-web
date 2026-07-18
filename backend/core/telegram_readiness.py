@@ -41,6 +41,8 @@ def _authorized_user_ids_count() -> int:
 
 
 def get_telegram_alert_status() -> Dict[str, Any]:
+    from backend.core.telegram_sender import evaluate_test_send_gates
+
     token_value = _telegram_token_value()
     token_configured = bool(token_value)
     chat_configured = _configured("TELEGRAM_CHAT_ID")
@@ -62,8 +64,10 @@ def get_telegram_alert_status() -> Dict[str, Any]:
     locked_reason = (
         "Telegram sending locked by default configuration"
         if safety_state == "SAFE"
-        else "Telegram send/test/scheduler flags are not allowed in Phase 6X"
+        else "One or more Telegram send/test/scheduler flags are enabled"
     )
+
+    gates = evaluate_test_send_gates()
 
     return {
         "telegram_bot_token_configured": token_configured,
@@ -81,8 +85,11 @@ def get_telegram_alert_status() -> Dict[str, Any]:
         "telegram_test_send_enabled": test_send_enabled,
         "alert_scheduler_enabled": alert_scheduler_enabled,
         "can_send_telegram": False,
-        "can_run_test_send": False,
-        "telegram_network_calls_locked": True,
+        "can_run_test_send": gates["can_run_test_send"],
+        "test_send_gate_status": gates["test_send_gate_status"],
+        "test_send_requires_manual_enablement": gates["test_send_requires_manual_enablement"],
+        "network_call_allowed_for_test_send": gates["network_call_allowed_for_test_send"],
+        "telegram_network_calls_locked": not gates["can_run_test_send"],
         "safety_state": safety_state,
         "locked_reason": locked_reason,
     }
