@@ -1,0 +1,23 @@
+# Web app + test dependencies only (excludes engine-research packages such as
+# pandas-ta that are not required to run or validate the FastAPI backend).
+# Use this file in CI and sandbox validation environments:
+#   pip install -r requirements-webapp.txt
+fastapi
+uvicorn
+pydantic
+pydantic-settings
+aiosqlite
+httpx
+requests
+passlib
+bcrypt
+PyJWT
+cryptography
+python-multipart
+anthropic
+python-telegram-bot[job-queue]>=20
+pandas
+yfinance
+nest_asyncio
+pytest
+pytest-asyncio

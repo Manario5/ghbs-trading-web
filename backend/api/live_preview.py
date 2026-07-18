@@ -40,6 +40,18 @@ def sanitize_for_json(val):
         return [sanitize_for_json(v) for v in val]
     return val
 
+@router.get("/readiness")
+async def live_preview_readiness(current_user: dict = Depends(get_current_user)):
+    """Unified preview gate visibility (Release Train D). Config-only, no network."""
+    from backend.core.preview_readiness import get_preview_readiness
+    return get_preview_readiness()
+
+@router.get("/sample-format")
+async def live_preview_sample_format(current_user: dict = Depends(get_current_user)):
+    """Static sample of preview output shape (Release Train D). No engine run."""
+    from backend.core.preview_readiness import build_sample_preview
+    return build_sample_preview()
+
 @router.post("/analyze/{ticker}")
 async def live_preview_analyze(ticker: str, current_user: dict = Depends(get_current_user)):
     verify_no_execution_side_effects()

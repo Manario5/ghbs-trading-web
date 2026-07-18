@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { LineChart, CheckCircle, XCircle } from 'lucide-react';
+import { ProviderStatusPanel } from '../components/ProviderStatusPanel';
 
 export function MarketData() {
   const [status, setStatus] = useState<any>(null);
@@ -184,6 +185,8 @@ export function MarketData() {
           </div>
         </div>
       </div>
+
+      <ProviderStatusPanel />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Status Panel */}

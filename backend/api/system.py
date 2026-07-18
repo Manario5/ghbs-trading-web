@@ -115,6 +115,54 @@ async def secret_status():
     from backend.core.secrets import get_secret_status
     return get_secret_status()
 
+@router.get("/health-deep")
+async def health_deep():
+    """Deep health check (Release Train F): DB connectivity + safety state. No secrets."""
+    from backend.db.database import get_db_path
+    db_ok = False
+    db_error = None
+    try:
+        import aiosqlite
+        async with aiosqlite.connect(get_db_path()) as db:
+            async with db.execute("SELECT 1") as cur:
+                row = await cur.fetchone()
+                db_ok = row is not None and row[0] == 1
+    except Exception as exc:  # report class only — no paths/values
+        db_error = type(exc).__name__
+
+    matrix = await safety_matrix()
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "db_connectivity": db_ok,
+        "db_error_class": db_error,
+        "safety_state": matrix["safety_state"],
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
+
+@router.get("/ops-status")
+async def ops_status():
+    """
+    Consolidated operational status (Release Train F).
+    Aggregates every readiness surface into one masked, secret-free response.
+    """
+    from backend.core.secrets import get_secret_status
+    from backend.core.provider_health import get_provider_health
+    from backend.core.preview_readiness import get_preview_readiness
+    from backend.core.scheduler_readiness import get_scheduler_readiness
+    from backend.core.telegram_readiness import get_telegram_alert_status
+
+    matrix = await safety_matrix()
+    return {
+        "safety_matrix": matrix,
+        "secrets_masked": get_secret_status(),
+        "provider_health": get_provider_health(),
+        "preview_readiness": get_preview_readiness(),
+        "scheduler_readiness": get_scheduler_readiness(),
+        "telegram_readiness": get_telegram_alert_status(),
+        "overall_state": matrix["safety_state"],
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
 @router.get("/db-gate-status")
 async def db_gate_status():
     from backend.core.db_gate import get_db_gate_status

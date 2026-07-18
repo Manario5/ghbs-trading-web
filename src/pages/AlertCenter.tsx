@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { Bell, Copy, CheckCircle, XCircle } from 'lucide-react';
 import { TelegramStatusPanel } from '../components/TelegramStatusPanel';
+import { SchedulerReadinessPanel } from '../components/SchedulerReadinessPanel';
 
 const alertTemplates = [
   { id: 'general_test', title: 'General Test Alert', message: 'TASI Sandbox: General System check. Pipeline is nominal.' },
@@ -127,6 +128,8 @@ export function AlertCenter() {
       </div>
 
       <TelegramStatusPanel />
+
+      <SchedulerReadinessPanel />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 

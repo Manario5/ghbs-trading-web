@@ -27,6 +27,12 @@ class QuoteResponse(BaseModel):
 class TestUniverseRequest(BaseModel):
     limit: Optional[int] = 5
 
+@router.get("/provider-health")
+async def provider_health(current_user: dict = Depends(get_current_user)):
+    """Config-only provider health + fallback report (Release Train C). No network calls."""
+    from backend.core.provider_health import get_provider_health
+    return get_provider_health()
+
 @router.get("/symbol-map")
 async def get_symbol_map(current_user: dict = Depends(get_current_user)):
     service = MarketDataService()

@@ -114,6 +114,17 @@ async def dry_run_loop(interval_seconds: int):
         except asyncio.TimeoutError:
             pass
 
+@router.get("/readiness")
+async def scheduler_readiness(current_user: dict = Depends(get_current_user)):
+    """Scheduler + scheduled-send gate readiness (Release Train E). Config-only, starts nothing."""
+    from backend.core.scheduler_readiness import get_scheduler_readiness
+    readiness = get_scheduler_readiness()
+    is_running = SCHEDULER_TASK is not None and not SCHEDULER_TASK.done()
+    readiness["is_running"] = is_running
+    if readiness["jobs_running"] is None:
+        readiness["jobs_running"] = 1 if is_running else 0
+    return readiness
+
 @router.get("/status", response_model=SchedulerStatusResponse)
 async def get_scheduler_status(current_user: dict = Depends(get_current_user)):
     global SCHEDULER_TASK, LAST_RUN_AT, NEXT_RUN_ESTIMATE, TOTAL_DRY_RUN_SENT
