@@ -46,7 +46,10 @@ async def safety_matrix():
     ro_required = os.environ.get("PRODUCTION_DB_READONLY_REQUIRED", "true").lower() == "true"
     prod_path_configured = bool(os.environ.get("PRODUCTION_DB_PATH", "").strip())
 
-    tg_token_configured = len(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()) > 0
+    tg_token_configured = (
+        len(os.environ.get("TELEGRAM_BOT_TOKEN", "").strip()) > 0
+        or len(os.environ.get("TELEGRAM_TOKEN", "").strip()) > 0
+    )
     anth_configured = len(os.environ.get("ANTHROPIC_API_KEY", "").strip()) > 0
 
     tg_masked = "configured" if tg_token_configured else "not configured"
