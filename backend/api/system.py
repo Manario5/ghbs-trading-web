@@ -219,3 +219,22 @@ async def live_preview_status():
 async def telegram_alert_status():
     from backend.core.telegram_readiness import get_telegram_alert_status
     return get_telegram_alert_status()
+
+
+@router.get("/operating-mode")
+async def operating_mode():
+    """
+    Business-friendly operating mode (Private Live Command Center).
+    Read-only; derives PRIVATE LIVE / AUTOMATED ALERTS / LOCKED-MAINTENANCE
+    from the environment gates. No secrets, no provider calls, no writes.
+    """
+    from backend.db.database import get_db_path
+    from backend.core.execution_guard import get_execution_guard_status
+    from backend.core.operating_mode import get_operating_mode
+    exec_active = any(get_execution_guard_status().values())
+    mode = get_operating_mode(get_db_path(), exec_active)
+    mode["active_environment"] = os.environ.get("ENVIRONMENT", "development")
+    mode["db_path"] = get_db_path()
+    mode["uses_sandbox_db"] = "tasi_ledger_test.db" in get_db_path()
+    mode["generated_at"] = datetime.now(timezone.utc).isoformat()
+    return mode

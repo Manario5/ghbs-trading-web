@@ -53,8 +53,8 @@ export function Login() {
           <p className="mt-2 text-sm text-gray-400">TASI Quant Command Center</p>
         </div>
 
-        <div className="bg-yellow-900/50 border border-yellow-700/50 rounded p-3 mb-6">
-          <p className="text-yellow-400 text-xs text-center font-bold">SANDBOX MODE</p>
+        <div className="bg-slate-800/60 border border-slate-600/50 rounded p-3 mb-6">
+          <p className="text-slate-300 text-xs text-center font-bold tracking-widest uppercase">Private Live · Authorized Access Only</p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>

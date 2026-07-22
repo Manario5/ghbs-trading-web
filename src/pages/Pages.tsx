@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { TradeTicket } from '../components/TradeTicket';
+import { OperatingModePanel } from '../components/OperatingModePanel';
+import { ModeBadge } from '../components/ModeBadge';
+import { ChartCard, EmptyState, LineChart, BarChart, HBarChart, Funnel, Donut } from '../components/charts/Charts';
 
 function useFetch<T>(url: string) {
   const [data, setData] = useState<T | null>(null);
@@ -50,30 +53,122 @@ const StatCard = ({ title, value, className = '' }: { title: string; value: Reac
   </div>
 );
 
+const ProviderHealthCards = ({ providers }: { providers: any[] }) => {
+  const styles: Record<string, string> = {
+    ready: 'text-amber-400 border-amber-700/40',
+    locked: 'text-emerald-400 border-emerald-700/40',
+    missing_key: 'text-red-400 border-red-700/40',
+    readiness_only: 'text-gray-400 border-gray-700/40',
+  };
+  if (!providers?.length) return <EmptyState message="No providers configured." />;
+  return (
+    <div className="grid grid-cols-2 gap-2">
+      {providers.map((p: any) => (
+        <div key={p.provider} className={`bg-gray-900 border rounded-lg p-3 ${styles[p.health] || styles.readiness_only}`}>
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium text-gray-200">{p.provider}</span>
+            <span className="text-[10px] font-semibold uppercase">{(p.health || '').replace('_', ' ')}</span>
+          </div>
+          <div className="text-[11px] text-gray-500 mt-1">
+            Key: {p.secret_masked} · {p.adapter_implemented ? 'adapter ready' : 'readiness only'}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export function Dashboard() {
-  const { data, loading, error } = useFetch<any>('/dashboard/summary');
+  const { data: summary } = useFetch<any>('/dashboard/summary');
+  const { data: live } = useFetch<any>('/dashboard/live-summary');
+  const { data: charts, loading } = useFetch<any>('/dashboard/charts');
+  const { data: funnel } = useFetch<any>('/dashboard/scout-funnel');
+  const { data: activity } = useFetch<any>('/dashboard/alert-activity');
+  const { data: providers } = useFetch<any>('/dashboard/provider-health');
+
+  const risk = live?.risk_snapshot;
+
+  const setupItems = (charts?.setup_distribution?.items || []).map((i: any) => ({ label: i.setup_type, value: i.count }));
+  const symbolItems = (charts?.symbol_strength?.items || []).map((i: any) => ({ label: i.ticker, value: i.score }));
+  const previewItems = (charts?.live_preview_outcomes?.items || []).map((i: any) => ({ label: i.label, value: i.count }));
+  const activitySeries = (activity?.series || []).map((s: any) => ({ label: (s.day || '').slice(5), value: s.sent + s.failed }));
 
   return (
-    <div className="space-y-6 max-w-5xl">
+    <div className="space-y-6 max-w-7xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white tracking-tight">Dashboard Overview</h1>
-        <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-          <span>⚡</span> SANDBOX MODE
+        <div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Command Center</h1>
+          <p className="text-sm text-gray-500 mt-0.5">GHBS Trading — TASI Quant Command Center</p>
         </div>
+        <ModeBadge />
       </div>
+
+      <OperatingModePanel />
+
+      {/* Risk / exposure snapshot */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard title="Equity (SAR)" value={summary ? summary.equity?.toLocaleString() : '—'} />
+        <StatCard title="Open Positions" value={summary?.open_positions ?? '—'} />
+        <StatCard title="Portfolio Heat" value={risk ? `${risk.portfolio_heat_pct}%` : '—'} />
+        <StatCard title="Exposure" value={risk?.exposure_pct != null ? `${risk.exposure_pct}%` : 'n/a'} />
+      </div>
+
       {loading && <Loading />}
-      {error && <ErrorMsg message={error} />}
-      {data && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard title="Equity" value={`$${data.equity?.toLocaleString()}`} />
-          <StatCard title="Open Positions" value={data.open_positions} />
-          <StatCard title="Portfolio Heat" value={`${(data.portfolio_heat * 100).toFixed(1)}%`} />
-          <StatCard title="Regime" value={data.regime} className={data.regime === 'GREEN' ? 'border-green-500/50' : data.regime === 'RED' ? 'border-red-500/50' : ''} />
-        </div>
-      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <ChartCard title="Market Regime Trend" subtitle="Average regime score over time (setup log)">
+          {charts?.regime_trend?.available
+            ? <LineChart points={charts.regime_trend.points} />
+            : <EmptyState message={charts?.regime_trend?.message || 'No history yet.'} />}
+        </ChartCard>
+
+        <ChartCard title="Setup Signal Distribution" subtitle="Counts by setup type">
+          {setupItems.length ? <Donut data={setupItems} /> : <EmptyState message={charts?.setup_distribution?.message || 'No signals yet.'} />}
+        </ChartCard>
+
+        <ChartCard title="Scout Funnel" subtitle={funnel?.available ? `Latest scout run · ${funnel.provider || ''}` : 'Latest scout preview run'}>
+          <Funnel stages={funnel?.stages || []} />
+        </ChartCard>
+
+        <ChartCard title="Symbol Strength Ranking" subtitle="Top symbols by avg confidence">
+          <HBarChart data={symbolItems.map((s: any) => ({ label: s.label, value: s.value }))} />
+        </ChartCard>
+
+        <ChartCard title="Alert Activity Timeline" subtitle="Alerts by day (manual + scheduled)">
+          {activitySeries.length ? <BarChart data={activitySeries} /> : <EmptyState message={activity?.message || 'No alert activity yet.'} />}
+        </ChartCard>
+
+        <ChartCard title="Provider Health" subtitle={providers?.network_calls_locked ? 'Network locked' : 'Network unlocked'}>
+          <ProviderHealthCards providers={providers?.providers || []} />
+        </ChartCard>
+
+        <ChartCard title="Live Preview Outcomes" subtitle="Trade executions are always 0 (impossible)">
+          <BarChart data={previewItems} />
+        </ChartCard>
+
+        <ChartCard title="Live Operations" subtitle="Latest activity & guarantees">
+          <div className="space-y-2 text-xs">
+            <OpRow label="Operating mode" value={live?.operating_mode_label} />
+            <OpRow label="Telegram sending" value={live?.telegram_sending_active ? 'Active' : 'Inactive'} />
+            <OpRow label="Scheduler" value={live?.scheduler_enabled ? 'Enabled' : 'Disabled'} />
+            <OpRow label="Last alert" value={live?.last_alert ? `${live.last_alert.delivery_status} · ${new Date(live.last_alert.created_at).toLocaleString()}` : 'None yet'} />
+            <OpRow label="Last analyze preview" value={live?.last_analyze_preview ? new Date(live.last_analyze_preview.created_at).toLocaleString() : 'None yet'} />
+            <OpRow label="Last scout preview" value={live?.last_scout_preview ? new Date(live.last_scout_preview.created_at).toLocaleString() : 'None yet'} />
+            <OpRow label="Production DB write" value="Impossible" good />
+            <OpRow label="Trade execution" value="Impossible" good />
+          </div>
+        </ChartCard>
+      </div>
     </div>
   );
 }
+
+const OpRow = ({ label, value, good }: { label: string; value?: React.ReactNode; good?: boolean }) => (
+  <div className="flex items-center justify-between border-b border-gray-800/60 pb-1.5">
+    <span className="text-gray-400">{label}</span>
+    <span className={good ? 'text-emerald-400 font-medium' : 'text-gray-300'}>{value ?? '—'}</span>
+  </div>
+);
 
 export function Account() {
   const { data, loading, error } = useFetch<any>('/account/summary');

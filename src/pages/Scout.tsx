@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { api } from '../services/api';
 import { TradeTicket } from '../components/TradeTicket';
 import { ActionPlanDrawer } from '../components/ActionPlanDrawer';
+import { ModeBadge } from '../components/ModeBadge';
 
 export function Scout() {
   const [data, setData] = useState<any>(null);
@@ -78,16 +79,14 @@ export function Scout() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white tracking-tight">Market Scout</h1>
-          <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5 mt-1">
-            <span>⚡</span> SANDBOX MODE
-          </div>
+          <ModeBadge />
         </div>
-        <button 
-          onClick={runScout} 
+        <button
+          onClick={runScout}
           disabled={loading}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg disabled:bg-blue-800 font-bold shadow-lg transition-all"
         >
-          {loading ? 'Scanning...' : 'Run Analysis (Sandbox)'}
+          {loading ? 'Scanning...' : 'Run Scan'}
         </button>
       </div>
 
@@ -191,7 +190,7 @@ export function Scout() {
           <div className="space-y-4 mt-6">
             <div className="bg-orange-900/40 border border-orange-700/50 p-3 rounded text-sm text-orange-400 font-medium">
               <span className="mr-2">⚠️</span>
-              LIVE DATA PREVIEW • SANDBOX ONLY • NO EXECUTION • NO ALERTS • NOT USED FOR TRADE RECORDING
+              LIVE DATA PREVIEW • READ-ONLY • NO EXECUTION • NO ALERTS • NOT RECORDED AS A TRADE
             </div>
 
             <div className="bg-gray-800/30 border border-gray-700/50 p-4 rounded-lg space-y-4">

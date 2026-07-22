@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { LineChart, CheckCircle, XCircle } from 'lucide-react';
 import { ProviderStatusPanel } from '../components/ProviderStatusPanel';
+import { ModeBadge } from '../components/ModeBadge';
 
 export function MarketData() {
   const [status, setStatus] = useState<any>(null);
@@ -180,10 +181,11 @@ export function MarketData() {
         <div className="flex items-center space-x-3">
           <LineChart className="w-5 h-5 text-blue-500" />
           <div>
-            <h2 className="font-semibold">Market Data Foundation</h2>
-            <p className="text-xs text-blue-400">Read-only market data test only. Data is not used for strategy, scout, analyze, alerts, or trade execution.</p>
+            <h2 className="font-semibold">Market Data</h2>
+            <p className="text-xs text-blue-400">Read-only market data. Not used for trade execution. Provider calls are gated by the live profile.</p>
           </div>
         </div>
+        <ModeBadge />
       </div>
 
       <ProviderStatusPanel />

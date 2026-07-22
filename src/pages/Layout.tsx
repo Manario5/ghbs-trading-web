@@ -4,6 +4,7 @@ import { useAuth } from '../services/auth';
 import { LayoutDashboard, User, Briefcase, Activity, Target, Search, Clock, Settings, LogOut, Calendar, BookOpen, Bell, BarChart2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { ModeBadge } from '../components/ModeBadge';
 
 function cx(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
@@ -70,9 +71,7 @@ function Layout() {
                <LogOut className="w-4 h-4" />
              </button>
           </div>
-          <div className="w-full text-center py-1.5 rounded bg-yellow-900/40 border border-yellow-700/50">
-            <span className="text-xs font-bold text-yellow-500 uppercase tracking-widest text-[10px]">Sandbox Mode</span>
-          </div>
+          <ModeBadge variant="block" />
         </div>
       </aside>
 
@@ -82,10 +81,7 @@ function Layout() {
         <header className="h-16 flex items-center justify-between px-8 border-b border-gray-800 bg-gray-950/50 backdrop-blur">
           <h2 className="text-sm font-medium text-gray-400 uppercase tracking-wider">TASI Quant Command Center</h2>
           <div className="flex items-center space-x-4">
-             <div className="px-3 py-1 rounded bg-yellow-900/30 border border-yellow-700/50 flex items-center space-x-2">
-                 <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></div>
-                 <span className="text-xs font-semibold text-yellow-500 tracking-wide">SANDBOX ACTIVE</span>
-             </div>
+             <ModeBadge />
           </div>
         </header>
         

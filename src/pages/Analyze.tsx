@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { TradeTicket } from '../components/TradeTicket';
+import { ModeBadge } from '../components/ModeBadge';
 
 import { ActionPlanDrawer } from '../components/ActionPlanDrawer';
 
@@ -402,14 +403,9 @@ export function Analyze() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white tracking-tight">Analyze</h1>
-          {livePreviewEnabled ? (
-            <div className="bg-orange-900/20 text-orange-400 px-3 py-1.5 rounded-md text-xs font-bold border border-orange-700/30 flex items-center gap-1.5">
-              <span>🟠</span> LIVE-UAT — READ-ONLY PREVIEW
-            </div>
-          ) : (
-            <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-              <span>⚡</span> SANDBOX MODE
-            </div>
+          <ModeBadge />
+          {livePreviewEnabled && (
+            <span className="text-[10px] font-semibold text-emerald-400 border border-emerald-700/40 rounded px-2 py-1">READ-ONLY PREVIEW</span>
           )}
         </div>
       </div>
