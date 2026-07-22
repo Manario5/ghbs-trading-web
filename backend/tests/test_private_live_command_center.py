@@ -227,3 +227,104 @@ def test_env_live_example_keeps_prod_db_locked():
         content = f.read()
     assert "ALLOW_PRODUCTION_DB=false" in content
     assert "PRODUCTION_DB_READONLY_REQUIRED=true" in content
+
+
+# ── Issue 1: manual test-send coexists with the scheduler ────────────────────
+
+def _full_live_profile(monkeypatch):
+    _clear(monkeypatch)
+    for k in [
+        "ENABLE_API_SMOKE_TESTS", "ENABLE_MARKET_DATA_SMOKE_TESTS",
+        "ENABLE_PROVIDER_COVERAGE_SCAN", "ENABLE_LIVE_ANALYZE_PREVIEW",
+        "ENABLE_LIVE_SCOUT_PREVIEW", "ENABLE_OHLCV_DIAGNOSTICS",
+        "ENABLE_TELEGRAM_DRY_RUN", "ENABLE_TELEGRAM_SEND",
+        "ENABLE_TELEGRAM_TEST_SEND", "ENABLE_ALERT_SCHEDULER",
+    ]:
+        monkeypatch.setenv(k, "true")
+    monkeypatch.setenv("ALERT_SCHEDULER_DRY_RUN_ONLY", "true")
+    monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "FAKE_TOKEN_FOR_TEST")
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "123456789")
+    monkeypatch.setenv("AUTHORIZED_USER_IDS", "111,222")
+    monkeypatch.setenv("DB_PATH", "tasi_ledger_test.db")
+
+
+def test_test_send_open_with_scheduler_enabled(monkeypatch):
+    from backend.core.telegram_sender import evaluate_test_send_gates
+    _full_live_profile(monkeypatch)
+    gates = evaluate_test_send_gates()
+    assert gates["can_run_test_send"] is True
+    assert gates["test_send_gate_status"] == "open"
+    assert gates["network_call_allowed_for_test_send"] is True
+    assert gates["blocked_reasons"] == []
+    # scheduler state is reported but never a blocker
+    assert gates.get("scheduler_enabled") is True
+    assert not any("SCHEDULER" in r.upper() for r in gates["blocked_reasons"])
+
+
+def test_test_send_still_blocked_when_token_missing(monkeypatch):
+    from backend.core.telegram_sender import evaluate_test_send_gates
+    _clear(monkeypatch)
+    monkeypatch.setenv("ENABLE_TELEGRAM_SEND", "true")
+    monkeypatch.setenv("ENABLE_TELEGRAM_TEST_SEND", "true")
+    monkeypatch.setenv("ENABLE_ALERT_SCHEDULER", "true")
+    monkeypatch.delenv("TELEGRAM_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("TELEGRAM_TOKEN", raising=False)
+    monkeypatch.setenv("TELEGRAM_CHAT_ID", "123")
+    gates = evaluate_test_send_gates()
+    assert gates["can_run_test_send"] is False
+    assert "No Telegram token configured" in gates["blocked_reasons"]
+
+
+def test_telegram_status_endpoint_test_send_open_with_scheduler(monkeypatch):
+    _full_live_profile(monkeypatch)
+    dep = _auth()
+    try:
+        with TestClient(app) as client:
+            data = client.get("/api/alerts/telegram/status").json()
+    finally:
+        app.dependency_overrides.pop(dep, None)
+    assert data["gates"]["can_run_test_send"] is True
+    assert data["gates"]["test_send_gate_status"] == "open"
+
+
+# ── Issue 5: everything-enabled profile → AUTOMATED ALERTS ───────────────────
+
+def test_everything_enabled_profile_is_automated_alerts(monkeypatch):
+    _full_live_profile(monkeypatch)
+    mode = get_operating_mode("tasi_ledger_test.db", exec_active=False)
+    assert mode["mode"] == "AUTOMATED_ALERTS"
+    assert mode["mode_label"] == "AUTOMATED ALERTS"
+
+    cap = mode["capabilities"]
+    assert cap["market_data_provider_usage"] is True
+    assert cap["ohlcv_diagnostics"] is True
+    assert cap["provider_coverage_scan"] is True
+    assert cap["live_analyze_preview"] is True
+    assert cap["live_scout_preview"] is True
+    assert cap["telegram_test_send"] is True
+    assert cap["manual_telegram_alerts"] is True
+
+    assert mode["telegram_sending_active"] is True
+    assert mode["automation"]["scheduler_enabled"] is True
+    assert mode["automation"]["scheduler_dry_run_only"] is True
+
+    # locked guarantees hold under the full profile
+    assert mode["trade_execution_possible"] is False
+    assert mode["broker_execution_possible"] is False
+    assert mode["production_db_write_possible"] is False
+    assert mode["blocked"]["public_exposure"] is True
+
+
+def test_everything_enabled_description_mentions_impossible(monkeypatch):
+    _full_live_profile(monkeypatch)
+    mode = get_operating_mode("tasi_ledger_test.db", exec_active=False)
+    desc = mode["description"].lower()
+    assert "scheduler is enabled" in desc
+    assert "impossible" in desc
+
+
+def test_general_test_template_no_sandbox_wording():
+    from backend.core.alert_templates import render_template
+    r = render_template("general_test")
+    assert "Sandbox" not in r["rendered"]
+    assert r["rendered"] == "GHBS TASI: General system check. Alert pipeline is nominal."

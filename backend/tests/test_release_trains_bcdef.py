@@ -222,8 +222,8 @@ def test_scheduled_sends_blocked_by_production_db(monkeypatch):
     assert "ALLOW_PRODUCTION_DB must be false" in gates["blocked_reasons"]
 
 
-def test_manual_and_scheduled_sends_mutually_exclusive(monkeypatch):
-    """No single .env can open both the manual test-send and scheduled-send gates."""
+def test_manual_and_scheduled_sends_can_coexist(monkeypatch):
+    """Manual test-send and scheduled sends may both be open (AUTOMATED ALERTS mode)."""
     from backend.core.telegram_sender import evaluate_test_send_gates
     _clear_gates(monkeypatch)
     monkeypatch.setenv("ENABLE_TELEGRAM_SEND", "true")
@@ -231,12 +231,14 @@ def test_manual_and_scheduled_sends_mutually_exclusive(monkeypatch):
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "FAKE_FOR_TEST")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "12345")
 
+    # Scheduler OFF: manual test-send open, scheduled sends locked.
     monkeypatch.setenv("ENABLE_ALERT_SCHEDULER", "false")
     assert evaluate_test_send_gates()["can_run_test_send"] is True
     assert evaluate_scheduled_send_gates()["can_run_scheduled_sends"] is False
 
+    # Scheduler ON: manual test-send STAYS open, scheduled sends now open too.
     monkeypatch.setenv("ENABLE_ALERT_SCHEDULER", "true")
-    assert evaluate_test_send_gates()["can_run_test_send"] is False
+    assert evaluate_test_send_gates()["can_run_test_send"] is True
     assert evaluate_scheduled_send_gates()["can_run_scheduled_sends"] is True
 
 

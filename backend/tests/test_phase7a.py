@@ -79,16 +79,18 @@ def test_missing_chat_id_blocks_send(monkeypatch):
     assert "TELEGRAM_CHAT_ID not configured" in gates["blocked_reasons"]
 
 
-def test_scheduler_enabled_blocks_send(monkeypatch):
-    """ENABLE_ALERT_SCHEDULER=true must block the test send."""
+def test_scheduler_enabled_does_not_block_test_send(monkeypatch):
+    """Manual test-send coexists with the scheduler (user-triggered + audited)."""
     monkeypatch.setenv("ENABLE_TELEGRAM_TEST_SEND", "true")
     monkeypatch.setenv("ENABLE_TELEGRAM_SEND", "true")
     monkeypatch.setenv("ENABLE_ALERT_SCHEDULER", "true")
     monkeypatch.setenv("TELEGRAM_BOT_TOKEN", "111:AAAAAA")
     monkeypatch.setenv("TELEGRAM_CHAT_ID", "123456")
     gates = evaluate_test_send_gates()
-    assert gates["can_run_test_send"] is False
-    assert "ENABLE_ALERT_SCHEDULER must be false" in gates["blocked_reasons"]
+    assert gates["can_run_test_send"] is True
+    assert gates["test_send_gate_status"] == "open"
+    assert gates["blocked_reasons"] == []
+    assert not any("SCHEDULER" in r.upper() for r in gates["blocked_reasons"])
 
 
 def test_send_flag_false_blocks(monkeypatch):

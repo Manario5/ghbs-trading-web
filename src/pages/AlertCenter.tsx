@@ -7,11 +7,11 @@ import { ModeBadge } from '../components/ModeBadge';
 import { LiveOperationsPanel } from '../components/LiveOperationsPanel';
 
 const alertTemplates = [
-  { id: 'general_test', title: 'General Test Alert', message: 'TASI Sandbox: General System check. Pipeline is nominal.' },
-  { id: 'scout_summary', title: 'Scout Summary Test', message: 'TASI Sandbox Scout: Found 3 candidate setups (R/R > 2.0). Review command center for details.' },
-  { id: 'action_plan_reminder', title: 'Action Plan Reminder Test', message: 'TASI Sandbox Reminder: You have 2 pending entry orders awaiting trigger.' },
-  { id: 'tp_hit', title: 'TP Hit Test', message: 'TASI Sandbox Alert: Target Profit (TP1) hit on sample trade. Partial close simulated.' },
-  { id: 'stop_alert', title: 'Stop Alert Test', message: 'TASI Sandbox Alert: Hard Stop condition met on sample trade. Risk containment verified.' },
+  { id: 'general_test', title: 'General Test Alert', message: 'GHBS TASI: General system check. Alert pipeline is nominal.' },
+  { id: 'scout_summary', title: 'Scout Summary Test', message: 'GHBS TASI Scout: Found 3 candidate setups (R/R > 2.0). Review command center for details.' },
+  { id: 'action_plan_reminder', title: 'Action Plan Reminder Test', message: 'GHBS TASI Reminder: You have 2 pending entry orders awaiting trigger.' },
+  { id: 'tp_hit', title: 'TP Hit Test', message: 'GHBS TASI Alert: Target Profit (TP1) hit on sample trade.' },
+  { id: 'stop_alert', title: 'Stop Alert Test', message: 'GHBS TASI Alert: Hard Stop condition met on sample trade. Risk containment verified.' },
 ];
 
 export function AlertCenter() {

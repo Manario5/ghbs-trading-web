@@ -59,7 +59,7 @@ async def send_dry_run_alert(forced=False):
     current_time = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     masked_chat = f"***{str(chat_id)[-4:]}" if len(str(chat_id)) > 4 else "***"
     msg_type = "Immediate" if forced else "Scheduled"
-    text_content = f"GHBS TASI Web App {msg_type} Dry-Run Alert\nSandbox Time: {current_time}\nThis is a scheduled dry-run check."
+    text_content = f"GHBS TASI {msg_type} Dry-Run Alert\nServer Time (UTC): {current_time}\nThis is a scheduled dry-run check."
     
     try:
         async with httpx.AsyncClient() as client:

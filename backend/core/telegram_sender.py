@@ -55,12 +55,12 @@ def evaluate_test_send_gates() -> Dict[str, Any]:
     token_ok = bool(_telegram_token())
     chat_ok = bool(_chat_id())
 
-    scheduler_blocked = scheduler_flag  # scheduler must be OFF
-
+    # Manual test-send is user-triggered and audited; it can coexist with the
+    # scheduler (scheduled sends are controlled separately). The scheduler flag
+    # therefore does NOT block manual test-send.
     all_pass = (
         test_send_flag
         and send_flag
-        and not scheduler_blocked
         and token_ok
         and chat_ok
     )
@@ -70,8 +70,6 @@ def evaluate_test_send_gates() -> Dict[str, Any]:
         blocked_reasons.append("ENABLE_TELEGRAM_TEST_SEND is false")
     if not send_flag:
         blocked_reasons.append("ENABLE_TELEGRAM_SEND is false")
-    if scheduler_blocked:
-        blocked_reasons.append("ENABLE_ALERT_SCHEDULER must be false")
     if not token_ok:
         blocked_reasons.append("No Telegram token configured")
     if not chat_ok:
@@ -80,9 +78,9 @@ def evaluate_test_send_gates() -> Dict[str, Any]:
     return {
         "gate_test_send_flag": test_send_flag,
         "gate_send_flag": send_flag,
-        "gate_scheduler_off": not scheduler_blocked,
         "gate_token_configured": token_ok,
         "gate_chat_id_configured": chat_ok,
+        "scheduler_enabled": scheduler_flag,
         "can_run_test_send": all_pass,
         "network_call_allowed_for_test_send": all_pass,
         "test_send_requires_manual_enablement": not all_pass,

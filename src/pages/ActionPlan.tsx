@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ModeBadge } from '../components/ModeBadge';
 import { api } from '../services/api';
 import { AlertTriangle, Plus, X, Edit2, Trash2 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -88,9 +89,7 @@ export function ActionPlan() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white tracking-tight">Tomorrow Action Plan</h1>
-          <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-            <span>⚡</span> SANDBOX MODE
-          </div>
+          <ModeBadge />
         </div>
         <button 
           onClick={() => setShowAddForm(true)}
@@ -104,7 +103,7 @@ export function ActionPlan() {
       <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 flex gap-3 items-start">
          <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
          <div className="text-sm text-yellow-500/90 leading-relaxed">
-           <strong>SANDBOX MODE:</strong> This action plan is for simulation and note-taking only. 
+           <strong>SIMULATION:</strong> This action plan is for simulation and note-taking only. 
            No real orders or automated reminders are executed.
          </div>
       </div>
@@ -174,7 +173,7 @@ export function ActionPlan() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-gray-900 border border-gray-800 w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">Add Sandbox Plan Item</h2>
+              <h2 className="text-xl font-bold text-white">Add Plan Item</h2>
               <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5"/></button>
             </div>
             <form onSubmit={handleAdd} className="space-y-4">
@@ -206,7 +205,7 @@ export function ActionPlan() {
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Notes / Reason (Optional)</label>
                 <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-lg px-4 py-2 text-white" placeholder="Setup thesis..."/>
               </div>
-              <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg">Save Sandbox Plan</button>
+              <button type="submit" className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-bold transition-all shadow-lg">Save Plan</button>
             </form>
           </div>
         </div>

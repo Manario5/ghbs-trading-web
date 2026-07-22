@@ -10,6 +10,17 @@ function cx(...inputs: (string | undefined | null | false)[]) {
   return twMerge(clsx(inputs));
 }
 
+// UI-only display-name mapping. Does not change authentication or the stored
+// username — purely cosmetic so legacy accounts read as a professional operator.
+const DISPLAY_NAMES: Record<string, string> = {
+  sandbox_admin: 'GHBS Operator',
+  admin: 'GHBS Operator',
+};
+function displayName(username?: string) {
+  if (!username) return 'GHBS Operator';
+  return DISPLAY_NAMES[username] || username;
+}
+
 export function ProtectedRoute() {
   const { token, loading } = useAuth();
   
@@ -66,7 +77,7 @@ function Layout() {
         </nav>
         <div className="p-4 border-t border-gray-800">
           <div className="flex items-center justify-between mb-2">
-             <span className="text-sm font-medium text-gray-300 truncate">{user?.username}</span>
+             <span className="text-sm font-medium text-gray-300 truncate">{displayName(user?.username)}</span>
              <button onClick={logout} className="text-gray-500 hover:text-white" title="Logout">
                <LogOut className="w-4 h-4" />
              </button>

@@ -12,7 +12,7 @@ TEMPLATES: Dict[str, Dict[str, str]] = {
     "general_test": {
         "title": "General Test Alert",
         "category": "test",
-        "body": "GHBS TASI Sandbox: General system check. Pipeline is nominal.",
+        "body": "GHBS TASI: General system check. Alert pipeline is nominal.",
     },
     "manual_test_send": {
         "title": "Manual Test-Send",
@@ -22,7 +22,7 @@ TEMPLATES: Dict[str, Dict[str, str]] = {
     "scout_summary_test": {
         "title": "Scout Summary Test",
         "category": "test",
-        "body": "GHBS TASI Sandbox Scout: Found {count} candidate setups (R/R > 2.0). Review command center for details.",
+        "body": "GHBS TASI Scout: Found {count} candidate setups (R/R > 2.0). Review command center for details.",
     },
     # ── future system alert templates (locked; delivery not implemented) ──
     "setup_detected": {

@@ -58,20 +58,21 @@ def get_operating_mode(db_path: str, exec_active: bool) -> Dict[str, Any]:
         mode = "AUTOMATED_ALERTS"
         mode_label = "AUTOMATED ALERTS"
         description = (
-            "Alert scheduler is enabled. Scheduled alert jobs may run. "
-            "Trade execution and production DB writes remain impossible."
+            "Alert scheduler is enabled. Telegram sending is active. Manual alerts "
+            "and test-send are available. Trade execution, broker execution, "
+            "production DB write, and public exposure remain impossible."
         )
     elif any_live_gate:
         mode = "PRIVATE_LIVE"
         mode_label = "PRIVATE LIVE"
         description = (
-            "Live market data, read-only previews, and manual alerts are enabled. "
-            "No automation, no trade execution, no production DB writes."
+            "Live market data and read-only previews are active. Manual Telegram "
+            "sending may be active. Scheduler is not running unless enabled."
         )
     else:
         mode = "LOCKED_MAINTENANCE"
         mode_label = "LOCKED / MAINTENANCE"
-        description = "All external/live actions are disabled."
+        description = "External/live gates are locked."
 
     telegram_sending_active = tg_send or tg_test
 

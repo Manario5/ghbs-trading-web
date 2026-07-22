@@ -177,9 +177,7 @@ export function Account() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white tracking-tight">Account Summary</h1>
-        <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-          <span>⚡</span> SANDBOX MODE
-        </div>
+        <ModeBadge />
       </div>
       {loading && <Loading />}
       {error && <ErrorMsg message={error} />}
@@ -211,16 +209,14 @@ export function Portfolio() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white tracking-tight">Open Portfolio</h1>
-        <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-          <span>⚡</span> SANDBOX MODE
-        </div>
+        <ModeBadge />
       </div>
       {loading && <Loading />}
       {error && <ErrorMsg message={error} />}
       {data && data.length === 0 && (
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-center space-y-3">
           <div className="text-gray-500 text-lg">No open positions.</div>
-          <p className="text-sm text-gray-600">Simulate a Sandbox buy in Scout or Analyze to see it here.</p>
+          <p className="text-sm text-gray-600">Simulate a buy in Scout or Analyze to see it here.</p>
         </div>
       )}
       {data && data.length > 0 && (
@@ -287,9 +283,7 @@ export function Performance() {
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white tracking-tight">Performance Metrics</h1>
-        <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-          <span>⚡</span> SANDBOX MODE
-        </div>
+        <ModeBadge />
       </div>
       {loading && <Loading />}
       {error && <ErrorMsg message={error} />}
@@ -347,9 +341,7 @@ export function History() {
         <h1 className="text-2xl font-bold text-white tracking-tight">Transaction History</h1>
         <div className="flex gap-3">
           <button onClick={exportCsv} disabled={!data || data.length === 0} className="px-4 py-2 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white rounded-lg font-bold text-sm transition-colors border border-gray-700">Export CSV</button>
-          <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-            <span>⚡</span> SANDBOX MODE
-          </div>
+          <ModeBadge />
         </div>
       </div>
       {loading && <Loading />}
@@ -452,10 +444,6 @@ export function Settings() {
     }
   };
 
-  const safetyMode = safety?.mode_label || (safety?.safety_state === 'SAFE' ? 'SAFE' : safety?.safety_state);
-  const isLiveUat = safety?.safety_state === 'WARNING';
-  const isUnsafe = safety?.safety_state === 'UNSAFE';
-
   return (
     <div className="space-y-6 max-w-5xl">
       <div className="flex items-center justify-between">
@@ -469,26 +457,6 @@ export function Settings() {
 
       {!loading && (
         <div className="space-y-6">
-          <div className={`border p-4 rounded-xl flex items-start space-x-4 ${
-              isUnsafe ? 'bg-red-900/30 border-red-700/50'
-              : isLiveUat ? 'bg-orange-900/30 border-orange-700/50'
-              : 'bg-yellow-900/30 border-yellow-700/50'
-          }`}>
-             <div className="text-2xl">{isUnsafe ? '⛔' : isLiveUat ? '🟠' : '⚠️'}</div>
-             <div>
-                <h3 className={`font-bold mb-1 ${isUnsafe ? 'text-red-400' : isLiveUat ? 'text-orange-400' : 'text-yellow-500'}`}>
-                  {isUnsafe ? 'UNSAFE MODE' : isLiveUat ? 'LIVE-UAT MODE (WARNING)' : 'Configuration Mode — SAFE'}
-                </h3>
-                <p className={`text-sm ${isUnsafe ? 'text-red-400/80' : isLiveUat ? 'text-orange-400/80' : 'text-yellow-400/80'}`}>
-                  {isLiveUat
-                    ? 'Read-only live preview and/or provider/Telegram test gates are enabled. No trade execution, no alerts scheduler, and no production DB write. Showing masked states only.'
-                    : isUnsafe
-                    ? 'One or more dangerous capabilities are enabled. Review the Safety Matrix reasons below immediately.'
-                    : 'All gates locked. Settings modification, true API keys, and strategy overrides are disabled. Showing masked states only.'}
-                </p>
-             </div>
-          </div>
-
           {testStatus && (
             <div className="bg-blue-900/30 border border-blue-700/50 p-4 rounded-xl text-blue-200">
               {testStatus}
@@ -497,9 +465,12 @@ export function Settings() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-gray-800 p-6 border border-gray-700 hover:border-gray-600 rounded-xl space-y-4 md:col-span-2">
-              <h3 className="text-lg font-medium text-white border-b border-gray-700 pb-2">Safety Matrix</h3>
-              <p className="text-xs text-gray-400">This panel is read-only. It does not enable or disable features. Change environment flags only on the VPS.</p>
-              
+              <div className="flex items-center justify-between border-b border-gray-700 pb-2">
+                <h3 className="text-lg font-medium text-white">Safety Matrix <span className="text-xs font-normal text-gray-500">(engineering diagnostics)</span></h3>
+                <span className="text-[10px] uppercase tracking-wider text-gray-500">Raw internal state — see Operating Mode above for product status</span>
+              </div>
+              <p className="text-xs text-gray-400">This panel is read-only. It does not enable or disable features. Change environment flags only on the VPS. A WARNING here simply means live gates are enabled; the product operating mode is shown in the Operating Mode panel above.</p>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-3">
                  <div className="space-y-3">
                     <div className="flex justify-between">

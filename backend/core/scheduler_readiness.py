@@ -12,10 +12,9 @@ Scheduled real sends require ALL of:
 - TELEGRAM_CHAT_ID configured
 - Safety gate pass: production DB disabled (ALLOW_PRODUCTION_DB=false)
 
-Note the deliberate asymmetry with the Phase 7A manual test-send (which
-requires the scheduler to be OFF): the two paths can never be enabled by the
-same configuration, so a single .env state cannot both auto-send and
-manual-test-send.
+Manual test-send (user-triggered, audited) and scheduled sends are controlled
+independently and may both be enabled in AUTOMATED ALERTS mode. Trade execution
+and production DB writes remain impossible regardless.
 """
 import os
 from typing import Any, Dict, List

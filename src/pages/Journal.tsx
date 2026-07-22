@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { ModeBadge } from '../components/ModeBadge';
 import { api } from '../services/api';
 import { AlertTriangle, Plus, X } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
@@ -76,9 +77,7 @@ export function Journal() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white tracking-tight">Trading Journal</h1>
-          <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-            <span>⚡</span> SANDBOX MODE
-          </div>
+          <ModeBadge />
         </div>
         <button 
           onClick={() => setShowAddForm(true)}
@@ -92,7 +91,7 @@ export function Journal() {
       <div className="bg-yellow-900/20 border border-yellow-700/30 rounded-xl p-3 flex gap-3 items-start">
          <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
          <div className="text-sm text-yellow-500/90 leading-relaxed">
-           <strong>SANDBOX MODE:</strong> Journal entries are stored in the simulation database.
+           <strong>SIMULATION:</strong> Journal entries are stored in the simulation database.
          </div>
       </div>
 
@@ -163,7 +162,7 @@ export function Journal() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-gray-900 border border-gray-800 w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-bold text-white">Add Sandbox Journal Note</h2>
+              <h2 className="text-xl font-bold text-white">Add Journal Note</h2>
               <button onClick={() => setShowAddForm(false)} className="text-gray-500 hover:text-white"><X className="w-5 h-5"/></button>
             </div>
             <form onSubmit={handleAdd} className="space-y-4">
