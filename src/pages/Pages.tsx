@@ -561,7 +561,7 @@ export function Settings() {
             <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl space-y-4">
               <h3 className="text-lg font-medium text-white border-b border-gray-700 pb-2">Secret Status (Phase 6S)</h3>
               <p className="text-xs text-gray-400">
-                Configured only means the value exists in .env. Operational use remains disabled until later phases.
+                Configured means the value exists in .env. Actual use is controlled by the current operating mode and runtime gates.
               </p>
               <div className="space-y-3 text-sm mt-3">
                 <div className="flex justify-between">
@@ -606,7 +606,7 @@ export function Settings() {
             <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl space-y-4">
               <h3 className="text-lg font-medium text-white border-b border-gray-700 pb-2">DB Gate Status (Phase 6T)</h3>
               <p className="text-xs text-gray-400">
-                This gate verifies read-only access only. The application database remains sandbox unless a later phase explicitly changes it.
+                This gate verifies read-only access only. The application uses the sandbox DB (tasi_ledger_test.db); production DB writes remain impossible in every operating mode.
               </p>
               <div className="space-y-3 text-sm mt-3">
                 <div className="flex justify-between">
@@ -682,10 +682,16 @@ export function Settings() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Telegram Sending</span>
-                  <span className={livePreview?.telegram_send_enabled ? "text-red-400 font-bold" : "text-green-400 font-bold"}>
-                    {livePreview?.telegram_send_enabled ? "Enabled" : "Disabled"}
+                  <span className="text-gray-400">Global Telegram Sending</span>
+                  <span className={safety?.telegram_send_enabled ? "text-emerald-400 font-bold" : "text-gray-400 font-bold"}>
+                    {safety?.telegram_send_enabled ? "Enabled" : "Disabled"}
                   </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Preview Telegram Sends
+                    <span className="block text-[10px] text-gray-600">Live preview never sends alerts</span>
+                  </span>
+                  <span className="text-green-400 font-bold">Disabled</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-400">Production DB Write</span>
@@ -830,7 +836,7 @@ export function Settings() {
               <div className="space-y-4 text-sm">
                 <p className="text-gray-400">Send a manual Telegram notification to verify alert delivery pipeline.</p>
                 <div className="bg-blue-900/20 border border-blue-700/30 p-3 rounded text-blue-300 text-xs text-center">
-                  Manual notification test only. No trading action, no scheduler, and no live signal execution.
+                  Manual notification only. No trading action, no live signal execution, and no production DB write. Scheduler status is controlled separately.
                 </div>
                 <button 
                   onClick={async () => {
