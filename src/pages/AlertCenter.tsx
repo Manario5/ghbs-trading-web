@@ -3,6 +3,8 @@ import { api } from '../services/api';
 import { Bell, Copy, CheckCircle, XCircle } from 'lucide-react';
 import { TelegramStatusPanel } from '../components/TelegramStatusPanel';
 import { SchedulerReadinessPanel } from '../components/SchedulerReadinessPanel';
+import { ModeBadge } from '../components/ModeBadge';
+import { LiveOperationsPanel } from '../components/LiveOperationsPanel';
 
 const alertTemplates = [
   { id: 'general_test', title: 'General Test Alert', message: 'TASI Sandbox: General System check. Pipeline is nominal.' },
@@ -129,31 +131,28 @@ export function AlertCenter() {
   return (
     <div className="space-y-6 max-w-5xl">
       {(() => {
-        const mode = safety?.mode_label || safety?.safety_state;
         const liveUat = safety?.safety_state === 'WARNING';
         const unsafe = safety?.safety_state === 'UNSAFE';
-        const wrap = unsafe ? 'bg-red-900/20 border-red-700/30 text-red-400'
-                    : liveUat ? 'bg-orange-900/20 border-orange-700/30 text-orange-400'
-                    : 'bg-yellow-900/20 border-yellow-700/30 text-yellow-500';
-        const title = unsafe ? 'Alert Center — UNSAFE MODE'
-                     : liveUat ? 'Alert Center — LIVE-UAT MODE'
-                     : 'Alert Center — SAFE MODE';
+        const sending = safety?.telegram_send_enabled || safety?.telegram_test_send_enabled;
         return (
-          <div className={`flex justify-between items-center border p-4 rounded-xl ${wrap}`}>
+          <div className="flex justify-between items-center border border-gray-800 bg-gray-900/70 p-4 rounded-xl">
             <div className="flex items-center space-x-3">
-              <Bell className="w-5 h-5" />
+              <Bell className={`w-5 h-5 ${unsafe ? 'text-red-400' : liveUat ? 'text-emerald-400' : 'text-slate-400'}`} />
               <div>
-                <h2 className="font-semibold">{title}{mode ? '' : ''}</h2>
-                <p className="text-xs opacity-90">
-                  {liveUat
-                    ? 'Live-UAT gates enabled. Manual alert / test-send only. No scheduler auto-send, no live signal, no trade execution.'
-                    : 'Manual alert only. No scheduler, no live signal, no trade execution.'}
+                <h2 className="font-semibold text-gray-100">Alert Center</h2>
+                <p className="text-xs text-gray-500">
+                  {sending
+                    ? 'Telegram sending is active. Manual alerts and test-send are enabled. No trade execution, no production DB write.'
+                    : 'Manual alerts only. Telegram sending is locked. No scheduler auto-send, no trade execution.'}
                 </p>
               </div>
             </div>
+            <ModeBadge />
           </div>
         );
       })()}
+
+      <LiveOperationsPanel />
 
       <TelegramStatusPanel />
 

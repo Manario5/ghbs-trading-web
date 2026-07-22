@@ -457,11 +457,16 @@ export function Settings() {
   const isUnsafe = safety?.safety_state === 'UNSAFE';
 
   return (
-    <div className="space-y-6 max-w-4xl">
-      <h1 className="text-2xl font-bold text-white tracking-tight">System & Settings</h1>
-      
+    <div className="space-y-6 max-w-5xl">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white tracking-tight">System &amp; Settings</h1>
+        <ModeBadge />
+      </div>
+
+      <OperatingModePanel />
+
       {loading && <Loading />}
-      
+
       {!loading && (
         <div className="space-y-6">
           <div className={`border p-4 rounded-xl flex items-start space-x-4 ${
