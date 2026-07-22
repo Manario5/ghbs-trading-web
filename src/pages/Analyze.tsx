@@ -340,6 +340,14 @@ export function Analyze() {
   const [liveError, setLiveError] = useState('');
   const [showActionPlan, setShowActionPlan] = useState(false);
 
+  const [livePreviewEnabled, setLivePreviewEnabled] = useState(false);
+
+  useEffect(() => {
+    api.get('/system/live-preview-status')
+      .then(res => setLivePreviewEnabled(!!res.data?.live_analyze_preview_enabled))
+      .catch(() => setLivePreviewEnabled(false));
+  }, []);
+
   const runAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ticker) return;
@@ -394,11 +402,23 @@ export function Analyze() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold text-white tracking-tight">Analyze</h1>
-          <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
-            <span>⚡</span> SANDBOX MODE
-          </div>
+          {livePreviewEnabled ? (
+            <div className="bg-orange-900/20 text-orange-400 px-3 py-1.5 rounded-md text-xs font-bold border border-orange-700/30 flex items-center gap-1.5">
+              <span>🟠</span> LIVE-UAT — READ-ONLY PREVIEW
+            </div>
+          ) : (
+            <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md text-xs font-bold border border-yellow-700/30 flex items-center gap-1.5">
+              <span>⚡</span> SANDBOX MODE
+            </div>
+          )}
         </div>
       </div>
+      {livePreviewEnabled && (
+        <div className="bg-orange-900/10 border border-orange-700/30 text-orange-300 text-xs rounded-md px-4 py-2">
+          Live preview is enabled: use <span className="font-semibold">Run Live Preview</span> below for real market data.
+          Read-only — no trade execution, no alerts, no production DB write. The top form remains a sandbox (mock) analyze.
+        </div>
+      )}
 
       <form onSubmit={runAnalyze} className="flex gap-4">
         <input 
@@ -412,7 +432,7 @@ export function Analyze() {
           disabled={loading}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:bg-blue-800 font-semibold"
         >
-          {loading ? 'Analyzing...' : 'Analyze (Sandbox)'}
+          {loading ? 'Analyzing...' : (livePreviewEnabled ? 'Analyze (Sandbox / mock)' : 'Analyze (Sandbox)')}
         </button>
       </form>
 

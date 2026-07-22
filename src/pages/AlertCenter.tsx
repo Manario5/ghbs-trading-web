@@ -37,6 +37,16 @@ export function AlertCenter() {
   }, [selectedTemplateId]);
 
   const [schedulerStatus, setSchedulerStatus] = useState<any>(null);
+  const [safety, setSafety] = useState<any>(null);
+
+  const loadSafety = async () => {
+    try {
+      const res = await api.get('/system/safety-matrix');
+      setSafety(res.data);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const loadLogs = async () => {
     try {
@@ -59,6 +69,7 @@ export function AlertCenter() {
   useEffect(() => {
     loadLogs();
     loadSchedulerStatus();
+    loadSafety();
   }, []);
 
   const handleSend = async () => {
@@ -117,15 +128,32 @@ export function AlertCenter() {
 
   return (
     <div className="space-y-6 max-w-5xl">
-      <div className="flex justify-between items-center bg-yellow-900/20 border border-yellow-700/30 p-4 rounded-xl text-yellow-500">
-        <div className="flex items-center space-x-3">
-          <Bell className="w-5 h-5 text-yellow-500" />
-          <div>
-            <h2 className="font-semibold">Sandbox Alert Center</h2>
-            <p className="text-xs text-yellow-400">Manual alert only. No scheduler, no live signal, no trade execution.</p>
+      {(() => {
+        const mode = safety?.mode_label || safety?.safety_state;
+        const liveUat = safety?.safety_state === 'WARNING';
+        const unsafe = safety?.safety_state === 'UNSAFE';
+        const wrap = unsafe ? 'bg-red-900/20 border-red-700/30 text-red-400'
+                    : liveUat ? 'bg-orange-900/20 border-orange-700/30 text-orange-400'
+                    : 'bg-yellow-900/20 border-yellow-700/30 text-yellow-500';
+        const title = unsafe ? 'Alert Center — UNSAFE MODE'
+                     : liveUat ? 'Alert Center — LIVE-UAT MODE'
+                     : 'Alert Center — SAFE MODE';
+        return (
+          <div className={`flex justify-between items-center border p-4 rounded-xl ${wrap}`}>
+            <div className="flex items-center space-x-3">
+              <Bell className="w-5 h-5" />
+              <div>
+                <h2 className="font-semibold">{title}{mode ? '' : ''}</h2>
+                <p className="text-xs opacity-90">
+                  {liveUat
+                    ? 'Live-UAT gates enabled. Manual alert / test-send only. No scheduler auto-send, no live signal, no trade execution.'
+                    : 'Manual alert only. No scheduler, no live signal, no trade execution.'}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       <TelegramStatusPanel />
 
@@ -184,19 +212,34 @@ export function AlertCenter() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              {schedulerStatus?.is_running ? (
-                <button onClick={handleStopScheduler} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-xs font-semibold text-white transition-colors whitespace-nowrap">
-                  Stop All Scheduler Tasks
+            <div className="flex flex-col gap-2 w-full md:w-auto">
+              <div className="flex gap-2 w-full md:w-auto">
+                {schedulerStatus?.is_running ? (
+                  <button onClick={handleStopScheduler} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-xs font-semibold text-white transition-colors whitespace-nowrap">
+                    Stop All Scheduler Tasks
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleStartScheduler}
+                    disabled={!schedulerStatus?.enabled_in_env}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded text-xs font-semibold text-white transition-colors whitespace-nowrap"
+                  >
+                    Start Dry Run Scheduler
+                  </button>
+                )}
+                <button
+                  onClick={handleSendDryRunNow}
+                  disabled={!schedulerStatus?.enabled_in_env}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed rounded text-xs font-semibold text-white transition-colors whitespace-nowrap"
+                >
+                  Send Dry Run Alert Now
                 </button>
-              ) : (
-                <button onClick={handleStartScheduler} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-xs font-semibold text-white transition-colors whitespace-nowrap">
-                  Start Dry Run Scheduler
-                </button>
+              </div>
+              {schedulerStatus && !schedulerStatus.enabled_in_env && (
+                <p className="text-xs text-gray-500 md:text-right">
+                  Scheduler is locked because ENABLE_ALERT_SCHEDULER=false.
+                </p>
               )}
-              <button onClick={handleSendDryRunNow} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-xs font-semibold text-white transition-colors whitespace-nowrap">
-                Send Dry Run Alert Now
-              </button>
             </div>
           </div>
         </div>

@@ -323,18 +323,43 @@ export function Settings() {
   const { data: providerStatus, loading: providerLoading } = useFetch<any>('/system/provider-readiness-status');
   
   const [testStatus, setTestStatus] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<{
+    target: string; ok: boolean; message: string; timestamp: string;
+  } | null>(null);
+  const [testingTarget, setTestingTarget] = useState<string | null>(null);
 
   const loading = healthLoading || versionLoading || configLoading || integrationsLoading || safetyLoading || secretLoading || dbGateLoading || livePreviewLoading || providerLoading;
 
   const testIntegration = async (target: string) => {
-    setTestStatus('Testing...');
+    setTestingTarget(target);
+    setTestResult(null);
+    setTestStatus(null);
+    const label = target.charAt(0).toUpperCase() + target.slice(1);
     try {
       const res = await api.post(`/integrations/${target}/test`);
-      setTestStatus(res.data.message || 'Test passed successfully.');
+      // Backend returns 200 with { success, message } even on a handled failure.
+      const ok = res.data?.success !== false;
+      setTestResult({
+        target,
+        ok,
+        message: res.data?.message || (ok ? `${label} test passed.` : `${label} test failed.`),
+        timestamp: new Date().toLocaleString(),
+      });
     } catch (err: any) {
-      setTestStatus(`Test failed: ${err.response?.data?.detail || err.message}`);
+      setTestResult({
+        target,
+        ok: false,
+        message: err.response?.data?.detail || err.message || `${label} test failed.`,
+        timestamp: new Date().toLocaleString(),
+      });
+    } finally {
+      setTestingTarget(null);
     }
   };
+
+  const safetyMode = safety?.mode_label || (safety?.safety_state === 'SAFE' ? 'SAFE' : safety?.safety_state);
+  const isLiveUat = safety?.safety_state === 'WARNING';
+  const isUnsafe = safety?.safety_state === 'UNSAFE';
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -344,13 +369,22 @@ export function Settings() {
       
       {!loading && (
         <div className="space-y-6">
-          <div className="bg-yellow-900/30 border border-yellow-700/50 p-4 rounded-xl flex items-start space-x-4">
-             <div className="text-2xl">⚠️</div>
+          <div className={`border p-4 rounded-xl flex items-start space-x-4 ${
+              isUnsafe ? 'bg-red-900/30 border-red-700/50'
+              : isLiveUat ? 'bg-orange-900/30 border-orange-700/50'
+              : 'bg-yellow-900/30 border-yellow-700/50'
+          }`}>
+             <div className="text-2xl">{isUnsafe ? '⛔' : isLiveUat ? '🟠' : '⚠️'}</div>
              <div>
-                <h3 className="text-yellow-500 font-bold mb-1">Sandbox Configuration Mode</h3>
-                <p className="text-sm text-yellow-400/80">
-                  Settings modification, true API keys, and strategy overrides are disabled in Sandbox mode. 
-                  Showing available masked states only.
+                <h3 className={`font-bold mb-1 ${isUnsafe ? 'text-red-400' : isLiveUat ? 'text-orange-400' : 'text-yellow-500'}`}>
+                  {isUnsafe ? 'UNSAFE MODE' : isLiveUat ? 'LIVE-UAT MODE (WARNING)' : 'Configuration Mode — SAFE'}
+                </h3>
+                <p className={`text-sm ${isUnsafe ? 'text-red-400/80' : isLiveUat ? 'text-orange-400/80' : 'text-yellow-400/80'}`}>
+                  {isLiveUat
+                    ? 'Read-only live preview and/or provider/Telegram test gates are enabled. No trade execution, no alerts scheduler, and no production DB write. Showing masked states only.'
+                    : isUnsafe
+                    ? 'One or more dangerous capabilities are enabled. Review the Safety Matrix reasons below immediately.'
+                    : 'All gates locked. Settings modification, true API keys, and strategy overrides are disabled. Showing masked states only.'}
                 </p>
              </div>
           </div>
@@ -412,8 +446,23 @@ export function Settings() {
                   'bg-red-900/40 text-red-500 border-red-700/50'
               }`}>
                  Safety State: {safety?.safety_state || 'UNKNOWN'}
-                 {safety?.safety_state === 'WARNING' && <div className="text-xs font-normal mt-1 text-yellow-600/80">Alert Scheduler is enabled but could overlap.</div>}
-                 {safety?.safety_state === 'UNSAFE' && <div className="text-xs font-normal mt-1 text-red-600/80">Production capabilities or paths are enabled.</div>}
+                 {safety?.mode_label && safety.mode_label !== safety.safety_state && (
+                   <span className="ml-2 text-xs font-normal opacity-80">({safety.mode_label})</span>
+                 )}
+                 {safety?.safety_state === 'WARNING' && (
+                   <div className="text-xs font-normal mt-1 text-yellow-600/90">
+                     {(safety?.warning_reasons?.length ? safety.warning_reasons : ['One or more live-UAT gates are enabled.']).map((r: string, i: number) => (
+                       <div key={i}>• {r}</div>
+                     ))}
+                   </div>
+                 )}
+                 {safety?.safety_state === 'UNSAFE' && (
+                   <div className="text-xs font-normal mt-1 text-red-600/90">
+                     {(safety?.unsafe_reasons?.length ? safety.unsafe_reasons : ['Production capabilities or paths are enabled.']).map((r: string, i: number) => (
+                       <div key={i}>• {r}</div>
+                     ))}
+                   </div>
+                 )}
               </div>
             </div>
 
@@ -666,8 +715,8 @@ export function Settings() {
                       {integrations?.anthropic?.status_text || 'Unknown'}
                     </span>
                   </div>
-                  <button onClick={() => testIntegration('anthropic')} className="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded text-xs font-semibold text-white transition-colors">
-                    Test Anthropic
+                  <button onClick={() => testIntegration('anthropic')} disabled={testingTarget === 'anthropic'} className="w-full py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 rounded text-xs font-semibold text-white transition-colors">
+                    {testingTarget === 'anthropic' ? 'Testing Anthropic…' : 'Test Anthropic'}
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -677,11 +726,31 @@ export function Settings() {
                       {integrations?.telegram_alert_bot?.status_text || 'Unknown'}
                     </span>
                   </div>
-                  <button onClick={() => testIntegration('telegram')} className="w-full py-2 bg-gray-700 hover:bg-gray-600 rounded text-xs font-semibold text-white transition-colors">
-                    Test Telegram
+                  {integrations?.telegram_alert_bot?.token_source && integrations.telegram_alert_bot.token_source !== 'missing' && (
+                    <div className="flex justify-between text-xs">
+                      <span className="text-gray-500">Token source</span>
+                      <span className="text-gray-400 font-mono">{integrations.telegram_alert_bot.token_source}</span>
+                    </div>
+                  )}
+                  <button onClick={() => testIntegration('telegram')} disabled={testingTarget === 'telegram'} className="w-full py-2 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 rounded text-xs font-semibold text-white transition-colors">
+                    {testingTarget === 'telegram' ? 'Testing Telegram…' : 'Test Telegram'}
                   </button>
                   <p className="text-xs text-gray-500 text-center mt-2">Smoke test only. No trading action will occur.</p>
                 </div>
+
+                {testResult && (
+                  <div className={`mt-2 p-3 rounded border text-xs space-y-1 ${
+                      testResult.ok ? 'bg-green-900/20 border-green-700/40 text-green-300'
+                                    : 'bg-red-900/20 border-red-700/40 text-red-300'
+                  }`}>
+                    <div className="flex justify-between font-semibold">
+                      <span>{testResult.target.charAt(0).toUpperCase() + testResult.target.slice(1)} test</span>
+                      <span>{testResult.ok ? 'SUCCESS' : 'FAILED'}</span>
+                    </div>
+                    <div className="break-words">{testResult.message}</div>
+                    <div className="text-gray-500">{testResult.timestamp}</div>
+                  </div>
+                )}
               </div>
             </div>
 

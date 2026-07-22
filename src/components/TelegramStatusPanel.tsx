@@ -15,16 +15,16 @@ function Flag({ label, value, goodWhen }: { label: string; value: boolean; goodW
 export function TelegramStatusPanel() {
   const [status, setStatus] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/alerts/telegram/status');
-      setStatus(res.data);
+      const res = await api.get('/alerts/telegram/status', { timeout: 15000 });
+      setStatus(res.data || {});
     } catch (e: any) {
-      setError(e.response?.data?.detail || e.message);
+      setError(e.response?.data?.detail || e.message || 'Request failed');
     } finally {
       setLoading(false);
     }
@@ -32,15 +32,24 @@ export function TelegramStatusPanel() {
 
   useEffect(() => { load(); }, []);
 
-  if (error) {
+  if (loading && !status) {
+    return <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-gray-500 text-sm">Loading Telegram status…</div>;
+  }
+  if (error && !status) {
     return (
-      <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-red-400 text-sm">
-        Failed to load Telegram status: {error}
+      <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-sm flex items-center justify-between">
+        <span className="text-red-400">Failed to load Telegram status: {error}</span>
+        <button onClick={load} className="ml-4 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded text-xs">Retry</button>
       </div>
     );
   }
   if (!status) {
-    return <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-gray-500 text-sm">Loading Telegram status…</div>;
+    return (
+      <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-sm flex items-center justify-between">
+        <span className="text-gray-500">No Telegram status data.</span>
+        <button onClick={load} className="ml-4 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded text-xs">Retry</button>
+      </div>
+    );
   }
 
   const r = status.readiness || {};

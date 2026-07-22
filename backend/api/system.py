@@ -58,24 +58,15 @@ async def safety_matrix():
     exec_status = get_execution_guard_status()
     tg_status = get_telegram_alert_status()
 
-    state = "SAFE"
-    if allow_prod and "tasi_ledger_test.db" not in db_path:
-        state = "UNSAFE"
-    elif allow_prod and not ro_required:
-        state = "UNSAFE"
-    elif "tasi_ledger.db" in db_path:
-        state = "UNSAFE"
-    elif any(exec_status.values()):
-        state = "UNSAFE"
-    elif alert_sched or cov_scan:
-        state = "UNSAFE" if (allow_prod or db_path != "tasi_ledger_test.db") else "WARNING"
-    elif live_analyze or live_scout or api_smoke:
-        state = "UNSAFE" if (allow_prod or db_path != "tasi_ledger_test.db") else "WARNING"
-
-    if tg_status.get("safety_state") != "SAFE" and state == "SAFE":
-        state = "WARNING"
+    from backend.core.safety_state import compute_safety_state
+    derived = compute_safety_state(db_path, any(exec_status.values()))
+    state = derived["safety_state"]
 
     return {
+        "mode_label": derived["mode_label"],
+        "warning_reasons": derived["warning_reasons"],
+        "unsafe_reasons": derived["unsafe_reasons"],
+        "safety_reasons": derived["reasons"],
         "allow_production_db": allow_prod,
         "db_path": db_path,
         "production_db_readonly_gate_enabled": gate_enabled,
@@ -183,22 +174,30 @@ async def live_preview_status():
     cov_scan = os.environ.get("ENABLE_PROVIDER_COVERAGE_SCAN", "false").lower() == "true"
     
     exec_status = get_execution_guard_status()
-    
-    # Safety check
-    state = "SAFE"
-    reason = "Safe"
-    if alert_sched:
-        state = "UNSAFE"
-        reason = "Scheduler must be disabled for manual preview"
+    exec_active = any(exec_status.values())
+
+    from backend.db.database import get_db_path
+    from backend.core.safety_state import compute_safety_state
+    derived = compute_safety_state(get_db_path(), exec_active)
+
+    # Manual preview is blocked (independently of the display state) whenever an
+    # overlapping capability is active. Kept separate from safety_state so the
+    # label stays consistent with the safety matrix (UAT requirement #5).
+    blocked_reason = None
+    if exec_active:
+        blocked_reason = "Execution guard reported active execution capabilities"
+    elif alert_sched:
+        blocked_reason = "Scheduler must be disabled for manual preview"
     elif cov_scan:
-        state = "UNSAFE"
-        reason = "Provider coverage scan must be disabled for manual preview"
-    elif any(exec_status.values()):
-        state = "UNSAFE"
-        reason = "Execution guard reported active execution capabilities"
+        blocked_reason = "Provider coverage scan must be disabled for manual preview"
+
+    if blocked_reason is not None:
+        reason = blocked_reason
     elif not live_analyze and not live_scout:
         reason = "Locked by default configuration"
-    
+    else:
+        reason = "Live preview enabled (read-only, no execution, no production DB write)"
+
     return {
         "live_analyze_preview_enabled": live_analyze,
         "live_scout_preview_enabled": live_scout,
@@ -206,9 +205,12 @@ async def live_preview_status():
         "provider_coverage_scan_enabled": cov_scan,
         **exec_status,
         "production_db_write_enabled": False, # Guarded by gate
-        "safety_state": state,
-        "can_manual_analyze_preview": live_analyze and state == "SAFE",
-        "can_manual_scout_preview": live_scout and state == "SAFE",
+        "safety_state": derived["safety_state"],
+        "mode_label": derived["mode_label"],
+        "warning_reasons": derived["warning_reasons"],
+        "unsafe_reasons": derived["unsafe_reasons"],
+        "can_manual_analyze_preview": live_analyze and blocked_reason is None,
+        "can_manual_scout_preview": live_scout and blocked_reason is None,
         "locked_reason": reason
     }
 

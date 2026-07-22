@@ -16,6 +16,7 @@ python -m pytest \
   backend/tests/test_phase7a.py \
   backend/tests/test_release_train_a.py \
   backend/tests/test_release_trains_bcdef.py \
+  backend/tests/test_uat_live_ui_fixes.py \
   -q
 
 echo "=== 3/4 Frontend build ==="

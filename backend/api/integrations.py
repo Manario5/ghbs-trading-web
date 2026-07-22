@@ -18,20 +18,38 @@ def assert_smoke_tests_enabled():
     if not enabled:
         raise HTTPException(status_code=400, detail="API smoke tests are completely disabled in this environment.")
 
+def _first_configured(*names: str) -> str:
+    """Return the first env var name that holds a non-empty value, else ''."""
+    for name in names:
+        if os.environ.get(name, "").strip():
+            return name
+    return ""
+
 @router.get("/status")
 def get_integrations_status(current_user: dict = Depends(get_current_user)):
-    anthropic_configured = bool(os.environ.get("ANTHROPIC_API_KEY"))
-    telegram_bot_configured = bool(os.environ.get("WEBAPP_TELEGRAM_BOT_TOKEN"))
-    telegram_chat_configured = bool(os.environ.get("WEBAPP_TELEGRAM_CHAT_ID"))
-    
+    anthropic_configured = bool(os.environ.get("ANTHROPIC_API_KEY", "").strip())
+
+    # Alias-aware Telegram detection (UAT requirement #8): primary
+    # TELEGRAM_BOT_TOKEN, alias TELEGRAM_TOKEN, and legacy WEBAPP_TELEGRAM_BOT_TOKEN.
+    token_source = _first_configured(
+        "TELEGRAM_BOT_TOKEN", "TELEGRAM_TOKEN", "WEBAPP_TELEGRAM_BOT_TOKEN"
+    )
+    chat_source = _first_configured("TELEGRAM_CHAT_ID", "WEBAPP_TELEGRAM_CHAT_ID")
+    telegram_bot_configured = bool(token_source)
+    telegram_chat_configured = bool(chat_source)
+    telegram_ready = telegram_bot_configured and telegram_chat_configured
+
     return {
         "anthropic": {
             "configured": anthropic_configured,
             "status_text": "Configured" if anthropic_configured else "Not Configured"
         },
         "telegram_alert_bot": {
-            "configured": telegram_bot_configured and telegram_chat_configured,
-            "status_text": "Configured" if telegram_bot_configured and telegram_chat_configured else "Not Configured"
+            "configured": telegram_ready,
+            "status_text": "Configured" if telegram_ready else "Not Configured",
+            "token_configured": telegram_bot_configured,
+            "chat_id_configured": telegram_chat_configured,
+            "token_source": token_source or "missing"
         }
     }
 

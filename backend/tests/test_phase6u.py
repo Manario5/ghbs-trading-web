@@ -35,7 +35,9 @@ async def test_analyze_enabled_only():
         data = resp.json()
         assert data["can_manual_analyze_preview"] is True
         assert data["can_manual_scout_preview"] is False
-        assert data["safety_state"] == "SAFE"
+        # Live preview enabled is a LIVE-UAT warning gate (consistent with safety matrix).
+        assert data["safety_state"] == "WARNING"
+        assert data["mode_label"] == "LIVE-UAT"
 
 @pytest.mark.asyncio
 async def test_scout_enabled_only():
@@ -46,7 +48,8 @@ async def test_scout_enabled_only():
         data = resp.json()
         assert data["can_manual_analyze_preview"] is False
         assert data["can_manual_scout_preview"] is True
-        assert data["safety_state"] == "SAFE"
+        assert data["safety_state"] == "WARNING"
+        assert data["mode_label"] == "LIVE-UAT"
 
 @pytest.mark.asyncio
 async def test_scheduler_blocks_preview():
@@ -56,8 +59,10 @@ async def test_scheduler_blocks_preview():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.get("/api/system/live-preview-status")
         data = resp.json()
+        # Manual preview stays blocked; state is WARNING (scheduler+preview are
+        # LIVE-UAT gates, not dangerous), consistent with the safety matrix.
         assert data["can_manual_analyze_preview"] is False
-        assert data["safety_state"] == "UNSAFE"
+        assert data["safety_state"] == "WARNING"
         assert "Scheduler must be disabled" in data["locked_reason"]
 
 @pytest.mark.asyncio
@@ -68,8 +73,10 @@ async def test_provider_coverage_blocks_preview():
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         resp = await ac.get("/api/system/live-preview-status")
         data = resp.json()
+        # Manual preview stays blocked; state is WARNING (coverage+preview are
+        # LIVE-UAT gates, not dangerous), consistent with the safety matrix.
         assert data["can_manual_scout_preview"] is False
-        assert data["safety_state"] == "UNSAFE"
+        assert data["safety_state"] == "WARNING"
         assert "Provider coverage scan must be disabled" in data["locked_reason"]
 
 def test_execution_guard_blocks():

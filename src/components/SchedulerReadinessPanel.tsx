@@ -5,16 +5,16 @@ import { Clock, Lock, Play, RefreshCw } from 'lucide-react';
 export function SchedulerReadinessPanel() {
   const [readiness, setReadiness] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/scheduler/readiness');
-      setReadiness(res.data);
+      const res = await api.get('/scheduler/readiness', { timeout: 15000 });
+      setReadiness(res.data || {});
     } catch (e: any) {
-      setError(e.response?.data?.detail || e.message);
+      setError(e.response?.data?.detail || e.message || 'Request failed');
     } finally {
       setLoading(false);
     }
@@ -22,8 +22,19 @@ export function SchedulerReadinessPanel() {
 
   useEffect(() => { load(); }, []);
 
-  if (error) return <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-red-400 text-sm">Failed to load scheduler readiness: {error}</div>;
-  if (!readiness) return <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-gray-500 text-sm">Loading scheduler readiness…</div>;
+  if (loading && !readiness) return <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-gray-500 text-sm">Loading scheduler readiness…</div>;
+  if (error && !readiness) return (
+    <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-sm flex items-center justify-between">
+      <span className="text-red-400">Failed to load scheduler readiness: {error}</span>
+      <button onClick={load} className="ml-4 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded text-xs">Retry</button>
+    </div>
+  );
+  if (!readiness) return (
+    <div className="bg-gray-800 p-6 border border-gray-700 rounded-xl text-sm flex items-center justify-between">
+      <span className="text-gray-500">No scheduler readiness data.</span>
+      <button onClick={load} className="ml-4 px-3 py-1.5 bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 rounded text-xs">Retry</button>
+    </div>
+  );
 
   const g = readiness.gates || {};
   const locked = g.scheduled_send_gate_status !== 'open';
