@@ -412,7 +412,7 @@ export function Analyze() {
       {livePreviewEnabled && (
         <div className="bg-orange-900/10 border border-orange-700/30 text-orange-300 text-xs rounded-md px-4 py-2">
           Live preview is enabled: use <span className="font-semibold">Run Live Preview</span> below for real market data.
-          Read-only — no trade execution, no alerts, no production DB write. The top form remains a sandbox (mock) analyze.
+          Read-only — no trade execution, no alerts, no production DB write. The top form remains a simulation (mock) analyze.
         </div>
       )}
 
@@ -428,7 +428,7 @@ export function Analyze() {
           disabled={loading}
           className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md disabled:bg-blue-800 font-semibold"
         >
-          {loading ? 'Analyzing...' : (livePreviewEnabled ? 'Analyze (Sandbox / mock)' : 'Analyze (Sandbox)')}
+          {loading ? 'Analyzing...' : 'Analyze (Simulation / mock)'}
         </button>
       </form>
 
@@ -438,7 +438,7 @@ export function Analyze() {
         <div className="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-4">
            {data.mocked_data && (
              <div className="bg-yellow-900/20 text-yellow-500 px-3 py-1.5 rounded-md inline-block text-xs font-bold border border-yellow-700/30">
-               ⚡ MOCKED DATA : TRUE (SANDBOX)
+               ⚡ MOCKED DATA : TRUE
              </div>
            )}
 
@@ -476,7 +476,7 @@ export function Analyze() {
                      onClick={() => setBuyTicket({ ticker: data.ticker, price: data.price, qty: data.proposal.shares })} 
                      className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-xl font-bold shadow-lg transition-all"
                    >
-                     Create Sandbox Buy Ticket
+                     Create Simulated Buy Ticket
                    </button>
                    
                    <div className="grid grid-cols-4 gap-2">
@@ -486,7 +486,7 @@ export function Analyze() {
                      <Link to="/journal" className="bg-gray-800 hover:bg-gray-700 text-white py-2 rounded-lg text-xs font-bold transition-all text-center leading-loose">Note</Link>
                    </div>
                    
-                   <p className="text-[10px] text-gray-500 text-center mt-3 uppercase tracking-tighter">Sandbox only • No live execution</p>
+                   <p className="text-[10px] text-gray-500 text-center mt-3 uppercase tracking-tighter">Simulation only • No live execution</p>
                  </div>
                </div>
              )}
@@ -503,7 +503,7 @@ export function Analyze() {
           initialQty={buyTicket.qty}
           onClose={() => setBuyTicket(null)}
           onSuccess={() => {
-            alert('Sandbox buy recorded successfully.');
+            alert('Simulated buy recorded successfully.');
           }}
         />
       )}
@@ -547,7 +547,7 @@ export function Analyze() {
             <div className="bg-orange-900/40 border border-orange-700/50 p-3 rounded text-sm text-orange-400 font-medium flex justify-between items-center">
               <div>
                 <span className="mr-2">⚠️</span>
-                LIVE DATA PREVIEW • SANDBOX ONLY • NO EXECUTION • NO ALERTS • NOT USED FOR TRADE RECORDING
+                LIVE DATA PREVIEW • SIMULATION ONLY • NO LIVE EXECUTION • NO ALERTS • NOT USED FOR TRADE RECORDING
               </div>
               <button 
                 onClick={() => setShowActionPlan(true)}

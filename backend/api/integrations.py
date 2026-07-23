@@ -98,7 +98,7 @@ async def test_telegram(current_user: dict = Depends(get_current_user)):
             url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
             payload = {
                 "chat_id": chat_id,
-                "text": "GHBS TASI Web App sandbox Telegram test."
+                "text": "GHBS TASI Command Center Telegram test."
             }
             resp = await client.post(url, json=payload, timeout=10.0)
             resp.raise_for_status()
